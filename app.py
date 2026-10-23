@@ -7,7 +7,7 @@ st.set_page_config(
     layout="wide",
 )
 
-# 2. Injeção de CSS otimizado para evitar cortes na faixa preta
+# 2. Injeção de CSS otimizado para a faixa preta e layout limpo
 st.markdown(
     """
     <style>
@@ -23,7 +23,7 @@ st.markdown(
             padding-right: 2rem !important;
         }
 
-        /* Faixa preta de ponta a ponta corrigida (sem overflow lateral) */
+        /* Faixa preta de ponta a ponta */
         .faixa-topo {
             background-color: #000000;
             width: calc(100% + 4rem);
@@ -59,7 +59,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# 3. Cabeçalho com faixa preta centralizada e sem cortes
+# 3. Cabeçalho com faixa preta centralizada
 st.markdown(
     """
     <div class="faixa-topo">
@@ -189,19 +189,4 @@ with col_main:
                 subcategoria = "Nenhuma"
                 if area_principal == "Sistemas":
                     subcategoria = st.selectbox(
-                        "Sistema Específico", ["Sistema RM", "Sistema SISMA"]
-                    )
-                elif area_principal == "Infraestrutura":
-                    subcategoria = st.selectbox(
-                        "Serviço Específico", ["Redes", "Computador"]
-                    )
-
-                detalhes = st.text_area(
-                    "Detalhes adicionais para a equipe", value=problema_usuario
-                )
-
-                submit = st.form_submit_button(
-                    "🚀 Enviar Chamado para T.I.", use_container_width=True
-                )
-
-                if submit
+                        "Sistema
