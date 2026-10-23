@@ -1,8 +1,31 @@
 import streamlit as st
 
-st.title("🛟 Central de Ajuda - Suporte T.I.")
+# 1. Configuração da página (deve ser o primeiro comando Streamlit)
+st.set_page_config(
+    page_title="Central de Ajuda - Ellenco",
+    page_icon="🛟",
+    layout="wide",  # Usa a largura total da tela para um visual mais moderno
+)
 
-# Base de conhecimento simulada (pode vir de um banco SQL)
+# 2. Cabeçalho com Logo alinhada à esquerda
+col_logo, col_titulo = st.columns([1, 4], vertical_alignment="center")
+
+with col_logo:
+    # Substitua 'logo_ellenco.png' pelo caminho/nome do arquivo da sua imagem
+    # Se quiser usar um link externo temporário, pode colocar a URL aqui
+    try:
+        st.image("logo_ellenco.png", width=180)
+    except Exception:
+        # Fallback visual caso a imagem não seja encontrada na pasta local
+        st.markdown("### **[ ELLENCO ]**")
+
+with col_titulo:
+    st.title("🛟 Central de Ajuda - Suporte T.I.")
+    st.caption("Autoatendimento e Abertura de Chamados Técnicos")
+
+st.divider()
+
+# 3. Base de conhecimento simulada
 base_conhecimento = [
     {
         "id": 1,
@@ -18,53 +41,95 @@ base_conhecimento = [
     },
 ]
 
-# 1. Usuário digita o problema
-problema_usuario = st.text_area(
-    "Descreva o seu problema ou dúvida:",
-    placeholder="Ex: Não consigo calcular a folha no RM Labore...",
-)
+# Inicializa o session_state para controlar a abertura do formulário
+if "abrir_chamado" not in st.session_state:
+    st.session_state.abrir_chamado = False
 
-if problema_usuario:
-  # 2. Lógica de busca por palavras-chave na base
-  texto_usuario = problema_usuario.lower()
-  sugestoes = []
+# Layout principal em 2 colunas: Entrada de dados / Procedimentos
+col_main, col_info = st.columns([2, 1], gap="large")
 
-  for item in base_conhecimento:
-    # Conta quantas palavras-chave batem com o texto do usuário
-    matches = sum(1 for palavra in item["palavras"] if palavra in texto_usuario)
-    if matches > 0:
-      sugestoes.append((matches, item))
-
-  # Ordena pelos mais relevantes
-  sugestoes.sort(key=lambda x: x[0], reverse=True)
-
-  # 3. Exibe procedimentos sugeridos (Deflection)
-  if sugestoes:
-    st.warning(
-        "💡 Encontramos alguns procedimentos que podem resolver seu problema"
-        " imediatamente:"
+with col_main:
+    st.subheader("1. Descreva a sua dúvida ou problema")
+    
+    problema_usuario = st.text_area(
+        label="Descrição do problema",
+        placeholder="Ex: Não consigo calcular a folha no RM Labore...",
+        height=130,
+        label_visibility="collapsed"
     )
-    for _, item in sugestoes[:2]:  # Mostra até 2 sugestões
-      with st.expander(f"📄 {item['titulo']}"):
-        st.write(item["solucao"])
-        resolvido = st.radio(
-            "Isso resolveu o seu problema?",
-            ["Selecione...", "Sim, resolveu!", "Não, preciso abrir chamado"],
-            key=f"res_{item['id']}",
-        )
 
-        if resolvido == "Sim, resolveu!":
-          st.success(
-              "Que ótimo! Chamado encerrado automaticamente por"
-              " autoatendimento."
-          )
-          st.stop()
-        elif resolvido == "Não, preciso abrir chamado":
-          st.info("Prosseguindo com a abertura do chamado...")
+    if problema_usuario:
+        texto_usuario = problema_usuario.lower()
+        sugestoes = []
 
-  # 4. Botão para abrir o chamado oficial caso nada tenha resolvido
-  if st.button("Enviar Chamado para a T.I."):
-    st.success(
-        "Chamado aberto com sucesso! Nossa equipe entrará em contato em breve."
-    )
-    # Aqui entra a lógica de salvar no banco de dados (ex: INSERT SQL)
+        for item in base_conhecimento:
+            matches = sum(1 for palavra in item["palavras"] if palavra in texto_usuario)
+            if matches > 0:
+                sugestoes.append((matches, item))
+
+        sugestoes.sort(key=lambda x: x[0], reverse=True)
+
+        if sugestoes:
+            st.warning("💡 Encontramos alguns procedimentos automáticos que podem te ajudar:")
+            
+            for _, item in sugestoes[:2]:
+                with st.expander(f"📄 **{item['titulo']}**", expanded=True):
+                    st.write(item["solucao"])
+                    st.markdown("---")
+                    
+                    resolvido = st.radio(
+                        "Isso resolveu o seu problema?",
+                        ["Selecione...", "Sim, resolveu!", "Não, preciso abrir chamado"],
+                        key=f"res_{item['id']}",
+                        horizontal=True
+                    )
+
+                    if resolvido == "Sim, resolveu!":
+                        st.success("🎉 Que ótimo! Chamado encerrado por autoatendimento.")
+                        st.session_state.abrir_chamado = False
+                        st.stop()
+                    elif resolvido == "Não, preciso abrir chamado":
+                        st.session_state.abrir_chamado = True
+
+        # Exibe o formulário de chamado se não houver sugestões ou se o usuário optou por abrir
+        if not sugestoes or st.session_state.abrir_chamado:
+            if not sugestoes:
+                st.info("ℹ️ Nenhuma solução automática foi encontrada. Vamos abrir um chamado para a equipe.")
+
+            st.markdown("---")
+            st.subheader("📝 Formulário de Abertura de Chamado")
+
+            with st.form(key="form_chamado", border=True):
+                col_c1, col_c2 = st.columns(2)
+                with col_c1:
+                    nome_solicitante = st.text_input("Seu Nome")
+                with col_c2:
+                    categoria = st.selectbox(
+                        "Categoria do Problema",
+                        ["Sistemas/RM", "Infraestrutura/Redes", "Hardware", "Outros"]
+                    )
+                
+                detalhes = st.text_area("Detalhes adicionais para o técnico", value=problema_usuario)
+                
+                submit = st.form_submit_button("🚀 Enviar Chamado para T.I.", use_container_width=True)
+                
+                if submit:
+                    if not nome_solicitante:
+                        st.error("Por favor, preencha o seu nome antes de enviar.")
+                    else:
+                        st.success("✅ Chamado aberto com sucesso! Nossa equipe entrará em contato.")
+                        st.session_state.abrir_chamado = False
+
+# Coluna lateral com informações adicionais e contatos úteis
+with col_info:
+    st.subheader("ℹ️ Informações Úteis")
+    
+    with st.container(border=True):
+        st.markdown("**⏰ Horário de Atendimento**")
+        st.write("Segunda a Sexta: 08:00 às 18:00")
+        
+        st.markdown("**📞 Ramais de Emergência**")
+        st.write("Suporte Interno: **#1020**")
+        
+        st.markdown("**📌 Dica**")
+        st.caption("Detalhe bem o seu problema no campo de texto para receber soluções mais precisas.")
