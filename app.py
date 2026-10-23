@@ -185,67 +185,26 @@ else:
 
 st.divider()
 st.caption('Ellenco · Central de Ajuda T.I. | Protótipo interno em Streamlit')
-# RODAPÉ COMPACTO - CENTRAL DE AJUDA ELLENCO
+# RODAPÉ - CENTRAL DE AJUDA ELLENCO
+
+st.divider()
 
 st.markdown(
-    """
-    <style>
-    .rodape-ellenco {
-        background-color: #111827;
-        color: #FFFFFF;
-        padding: 16px 24px;
-        border-radius: 8px;
-        margin-top: 25px;
-        text-align: center;
-        font-family: Arial, sans-serif;
-    }
-
-    .rodape-titulo {
-        font-size: 16px;
-        font-weight: 600;
-        margin-bottom: 10px;
-        color: #FFFFFF;
-    }
-
-    .rodape-contatos {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 8px 24px;
-        font-size: 12px;
-        color: #E5E7EB;
-    }
-
-    .rodape-contatos span {
-        white-space: nowrap;
-    }
-
-    .rodape-final {
-        font-size: 11px;
-        color: #9CA3AF;
-        margin-top: 12px;
-    }
-    </style>
-
-    <div class="rodape-ellenco">
-        <div class="rodape-titulo">
-            🖥️ Central de Atendimento - T.I.
-        </div>
-
-        <div class="rodape-contatos">
-            <span>📞 (11) 4000-1020</span>
-            <span>📱 (11) 90000-1020</span>
-            <span>☎️ Ramal 1020</span>
-            <span>✉️ ti@ellenco.com.br</span>
-        </div>
-
-        <div class="rodape-final">
-            Atendimento: Segunda a Sexta | 08h às 18h
-            &nbsp; • &nbsp;
-            © 2026 Ellenco Construções
-        </div>
-    </div>
-    """,
+    "<p style='text-align:center; font-size:13px; "
+    "font-weight:600; margin:0;'>"
+    "🖥️ Central de Atendimento - T.I."
+    "</p>",
     unsafe_allow_html=True
+)
+
+st.caption(
+    "📞 (11) 4000-1020  |  "
+    "📱 (11) 90000-1020  |  "
+    "☎️ Ramal 1020  |  "
+    "✉️ ti@ellenco.com.br"
+)
+
+st.caption(
+    "Segunda a sexta, das 08h às 18h  |  "
+    "© 2026 Ellenco Construções"
 )
