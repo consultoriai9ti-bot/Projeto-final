@@ -225,7 +225,7 @@ if pagina == "🏠 Início":
                     unsafe_allow_html=True)
     with b:
         st.markdown('<div class="small-card"><h3>🔎 Acompanhar</h3>'
-                    '<p>Consulte o atendimento pelo protocolo e e-mail.</p></div>',
+                    '<p>Consulte o atendimento pelo número do chamado e e-mail.</p></div>',
                     unsafe_allow_html=True)
     with c:
         st.markdown('<div class="small-card"><h3>📚 Autoatendimento</h3>'
@@ -235,7 +235,7 @@ if pagina == "🏠 Início":
 
 elif pagina == "➕ Abrir chamado":
     st.subheader("Novo chamado de suporte")
-    st.write("Preencha os dados. Você receberá um número de protocolo ao registrar.")
+    st.write("Preencha os dados. Você receberá um número do chamado ao registrar.")
     with st.form("novo_chamado"):
         st.markdown("**1. Seus dados**")
         c1, c2, c3 = st.columns([1.2, 1.4, 1])
@@ -288,8 +288,8 @@ elif pagina == "➕ Abrir chamado":
                     categoria, prioridade, titulo.strip(), descricao.strip(),
                 )
                 protocolo = criar_chamado(dados, arquivos or [])
-                st.success(f"Chamado registrado! Protocolo: **{protocolo}**")
-                st.info("Guarde seu protocolo e consulte o andamento na opção 'Consultar chamado'.")
+                st.success(f"Chamado registrado! Número do chamado: **{protocolo}**")
+                st.info("Guarde o número do chamado e consulte o andamento na opção 'Consultar chamado'.")
             except (OSError, sqlite3.Error, ValueError) as exc:
                 st.error(f"Não foi possível registrar o chamado: {exc}")
 
@@ -297,19 +297,19 @@ elif pagina == "🔎 Consultar chamado":
     st.subheader("Acompanhar atendimento")
     with st.form("consulta"):
         protocolo = st.text_input(
-            "Número do protocolo", placeholder="TI-20261023-ABC123"
+            "Número do chamado", placeholder="TI-20261023-ABC123"
         ).strip().upper()
         email_consulta = st.text_input("E-mail usado na abertura").strip().lower()
         buscar = st.form_submit_button("Consultar", type="primary")
     if buscar:
         if not protocolo or not email_consulta:
-            st.warning("Informe o protocolo e o e-mail utilizado na abertura.")
+            st.warning("Informe o número do chamado e o e-mail utilizado na abertura.")
         else:
             registro, anexos = buscar_chamado(protocolo, email_consulta)
             if registro is None:
-                st.warning("Chamado não encontrado para este protocolo e e-mail.")
+                st.warning("Chamado não encontrado para este número de chamado e e-mail.")
             else:
-                st.success(f"Protocolo {registro['protocolo']} · {registro['status']}")
+                st.success(f"Chamado nº {registro['protocolo']} · {registro['status']}")
                 st.markdown(f"**Assunto:** {html.escape(registro['titulo'])}")
                 campos = {
                     "Criado em": "criado_em",
