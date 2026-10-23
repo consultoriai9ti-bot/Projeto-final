@@ -3,19 +3,17 @@ import streamlit as st
 # 1. Configuração da página
 st.set_page_config(
     page_title="Central de Ajuda - Ellenco",
-    page_icon="🛟",
+    page_icon="🖥️",
     layout="wide",
 )
 
-# 2. Injeção de CSS para forçar o fundo branco em toda a aplicação
+# 2. Injeção de CSS para forçar o fundo branco e padronizar o visual
 st.markdown(
     """
     <style>
-        /* Fundo principal da página */
         .stApp {
             background-color: #FFFFFF !important;
         }
-        /* Cor de fundo para blocos de contêineres, formulários e expansores */
         div[data-testid="stForm"], div[data-testid="stExpander"] {
             background-color: #F8F9FA !important;
             border-radius: 8px;
@@ -26,22 +24,22 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# 3. Cabeçalho com Logo da Ellenco à esquerda
+# 3. Cabeçalho com Logo e Título com computador
 col_logo, col_titulo = st.columns([1, 4], vertical_alignment="center")
 
 with col_logo:
     try:
         st.image("logo_ellenco.png", width=180)
     except Exception:
-        st.markdown("### **[ ELLENCO ]**")
+        st.markdown("### **🖥️ [ ELLENCO ]**")
 
 with col_titulo:
-    st.title("🛟 Central de Ajuda - Suporte T.I.")
+    st.title("🖥️ Central de Ajuda - Suporte T.I.")
     st.caption("Autoatendimento e Abertura de Chamados Técnicos")
 
 st.divider()
 
-# 4. Base de conhecimento simulada
+# Base de conhecimento simulada
 base_conhecimento = [
     {
         "id": 1,
@@ -59,15 +57,21 @@ base_conhecimento = [
         "id": 3,
         "titulo": "SISMA: Bloqueio de acesso a módulo",
         "palavras": ["sisma", "modulo", "acesso", "permissao"],
-        "solucao": "Verifique com seu superior se perfil de acesso necessário foi concedido para o seu usuário no SISMA.",
+        "solucao": "Verifique com seu superior se o perfil de acesso necessário foi concedido para o seu usuário no SISMA.",
+    },
+    {
+        "id": 4,
+        "titulo": "Computador travando ou não liga",
+        "palavras": ["computador", "pc", "trava", "lento", "ligar"],
+        "solucao": "Reinicie a máquina pressionando o botão power por 5 segundos. Se persistir, abra um chamado para Infraestrutura.",
     },
 ]
 
-# Inicializa o estado de controle
+# Inicializa o session_state
 if "abrir_chamado" not in st.session_state:
     st.session_state.abrir_chamado = False
 
-# Layout principal
+# Layout principal em 2 colunas
 col_main, col_info = st.columns([2, 1], gap="large")
 
 with col_main:
@@ -75,7 +79,7 @@ with col_main:
 
     problema_usuario = st.text_area(
         label="Descrição do problema",
-        placeholder="Ex: Não consigo acessar o módulo no Sistema SISMA ou erro de rede...",
+        placeholder="Ex: Não consigo acessar o SISMA ou problema com meu computador...",
         height=120,
         label_visibility="collapsed",
     )
@@ -93,7 +97,7 @@ with col_main:
 
         sugestoes.sort(key=lambda x: x[0], reverse=True)
 
-        # 5. Deflection (Sugestões automáticas)
+        # Sugestões automáticas (Deflection)
         if sugestoes:
             st.warning(
                 "💡 Encontramos alguns procedimentos automáticos que podem te"
@@ -125,7 +129,7 @@ with col_main:
                     elif resolvido == "Não, preciso abrir chamado":
                         st.session_state.abrir_chamado = True
 
-        # 6. Formulário de Chamado
+        # Formulário com ramificação de áreas
         if not sugestoes or st.session_state.abrir_chamado:
             if not sugestoes:
                 st.info(
@@ -143,15 +147,25 @@ with col_main:
                     nome_solicitante = st.text_input("Seu Nome")
 
                 with col_c2:
-                    # Opções atualizadas conforme solicitado
-                    categoria = st.selectbox(
-                        "Categoria do Chamado",
-                        ["Redes", "Sistema RM", "Sistema SISMA", "Automação"],
+                    # 1º Nível: Escolha da Área Principal
+                    area_principal = st.selectbox(
+                        "Área de Destino",
+                        ["Selecione a área...", "Sistemas", "Infraestrutura"],
+                    )
+
+                # 2º Nível: Ramificação dinâmica com base na área escolhida
+                subcategoria = "Nenhuma"
+                if area_principal == "Sistemas":
+                    subcategoria = st.selectbox(
+                        "Sistema Específico", ["Sistema SISMA", "Sistema RM"]
+                    )
+                elif area_principal == "Infraestrutura":
+                    subcategoria = st.selectbox(
+                        "Serviço Específico", ["Redes", "Computador"]
                     )
 
                 detalhes = st.text_area(
-                    "Detalhes adicionais para a equipe de T.I.",
-                    value=problema_usuario,
+                    "Detalhes adicionais para a equipe", value=problema_usuario
                 )
 
                 submit = st.form_submit_button(
@@ -163,15 +177,15 @@ with col_main:
                         st.error(
                             "Por favor, preencha o seu nome antes de enviar."
                         )
+                    elif area_principal == "Selecione a área...":
+                        st.error("Por favor, selecione uma área de destino.")
                     else:
-                        # Lógica de salvamento no Banco de Dados / API entra aqui
                         st.success(
-                            f"✅ Chamado da categoria '{categoria}' aberto com"
-                            " sucesso! Nossa equipe entrará em contato."
+                            f"✅ Chamado aberto com sucesso na área de **{area_principal} -> {subcategoria}**! Nossa equipe entrará em contato."
                         )
                         st.session_state.abrir_chamado = False
 
-# Coluna lateral
+# Coluna lateral com informações
 with col_info:
     st.subheader("ℹ️ Atendimento T.I.")
 
@@ -182,6 +196,12 @@ with col_info:
         st.markdown("**📞 Contatos Rápidos**")
         st.write("Suporte Interno: **#1020**")
 
-        st.markdown("**📌 Categorias Suportadas**")
-        st.caption(
-            "• Redes\n• Sistema RM\n• Sistema SISMA\n• Processos de Automação"
+        st.markdown("**🗂️ Áreas e Ramificações**")
+        st.markdown(
+            "• **Sistemas:**\n"
+            "  - Sistema SISMA\n"
+            "  - Sistema RM\n"
+            "• **Infraestrutura:**\n"
+            "  - Redes\n"
+            "  - Computador"
+        )
