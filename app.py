@@ -197,9 +197,9 @@ st.markdown(
 )
 
 st.markdown(
-    "📞 (11) 4000-1020 &nbsp;&nbsp; | &nbsp;&nbsp; "
-    "📱 (11) 90000-1020 &nbsp;&nbsp; | &nbsp;&nbsp; "
-    "☎️ Ramal 1020",
+    "📞 (15) 4000-1020 &nbsp;&nbsp; | &nbsp;&nbsp; "
+    "📱 (15) 90000-1020 &nbsp;&nbsp; | &nbsp;&nbsp; "
+    "☎️ Ramal 2200",
     text_alignment="center"
 )
 
