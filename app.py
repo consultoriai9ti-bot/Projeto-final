@@ -24,13 +24,15 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# 3. Cabeçalho com Logo e Título com computador
+# 3. Cabeçalho com o arquivo 'logo.jpg' à esquerda e o Título com computador ao lado
 col_logo, col_titulo = st.columns([1, 4], vertical_alignment="center")
 
 with col_logo:
     try:
-        st.image("logo_ellenco.png", width=180)
+        # Pega a imagem local 'logo.jpg' da pasta do projeto
+        st.image("logo.jpg", width=180)
     except Exception:
+        # Fallback caso a imagem não esteja na pasta
         st.markdown("### **🖥️ [ ELLENCO ]**")
 
 with col_titulo:
