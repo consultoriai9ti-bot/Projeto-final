@@ -7,7 +7,7 @@ st.set_page_config(
     layout="wide",
 )
 
-# 2. Injeção de CSS para o fundo branco, faixas e layout personalizado
+# 2. Injeção de CSS para o fundo branco, faixas e centralização do título
 st.markdown(
     """
     <style>
@@ -23,32 +23,30 @@ st.markdown(
             padding-right: 2rem !important;
         }
 
-        /* Faixa preta de ponta a ponta no topo */
+        /* Faixa preta de ponta a ponta no topo com texto centralizado */
         .faixa-topo {
             background-color: #000000;
             width: 100vw;
             position: relative;
             left: calc(-50vw + 50%);
             right: calc(-50vw + 50%);
-            padding: 15px 40px;
+            padding: 20px 40px;
             margin-bottom: 2rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            text-align: center; /* Centraliza o conteúdo */
         }
 
         /* Cores e estilos dos textos dentro da faixa preta */
         .faixa-topo h1 {
             color: #FFFFFF !important;
-            font-size: 1.8rem !important;
+            font-size: 2rem !important;
             margin: 0 !important;
             font-weight: 600;
         }
         
         .faixa-topo p {
             color: #CCCCCC !important;
-            margin: 0 !important;
-            font-size: 0.9rem;
+            margin: 5px 0 0 0 !important;
+            font-size: 1rem;
         }
 
         /* Estilo dos containers e formulários */
@@ -62,21 +60,18 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# 3. Cabeçalho com faixa preta de ponta a ponta
+# 3. Cabeçalho com faixa preta de ponta a ponta centralizada
 st.markdown(
     """
     <div class="faixa-topo">
-        <div>
-            <h1>🖥️ Central de Ajuda - Suporte T.I.</h1>
-            <p>Autoatendimento e Abertura de Chamados Técnicos</p>
-        </div>
+        <h1>🖥️ Central de Ajuda - Suporte T.I.</h1>
+        <p>Autoatendimento e Abertura de Chamados Técnicos</p>
     </div>
     """,
     unsafe_allow_html=True,
 )
 
-# Coluna opcional para a Logo (caso queira exibir abaixo ou integrada, ajuste conforme preferência)
-# Aqui mantemos a estrutura de colunas principal logo abaixo da faixa
+# Logo da Ellenco posicionada logo abaixo da faixa (ou ajuste conforme desejar)
 col_logo_dir, _ = st.columns([1, 4])
 with col_logo_dir:
     try:
@@ -166,92 +161,3 @@ with col_main:
                             "Sim, resolveu!",
                             "Não, preciso abrir chamado",
                         ],
-                        key=f"res_{item['id']}",
-                        horizontal=True,
-                    )
-
-                    if resolvido == "Sim, resolveu!":
-                        st.success(
-                            "🎉 Que ótimo! Chamado encerrado por autoatendimento."
-                        )
-                        st.session_state.abrir_chamado = False
-                        st.stop()
-                    elif resolvido == "Não, preciso abrir chamado":
-                        st.session_state.abrir_chamado = True
-
-        # Formulário com ramificação de áreas
-        if not sugestoes or st.session_state.abrir_chamado:
-            if not sugestoes:
-                st.info(
-                    "ℹ️ Nenhuma solução automática foi encontrada. Vamos abrir"
-                    " um chamado para a equipe."
-                )
-
-            st.markdown("---")
-            st.subheader("📝 Formulário de Abertura de Chamado")
-
-            with st.form(key="form_chamado", border=True):
-                col_c1, col_c2 = st.columns(2)
-
-                with col_c1:
-                    nome_solicitante = st.text_input("Seu Nome")
-
-                with col_c2:
-                    # 1º Nível: Escolha da Área Principal
-                    area_principal = st.selectbox(
-                        "Área de Destino",
-                        ["Selecione a área...", "Sistemas", "Infraestrutura"],
-                    )
-
-                # 2º Nível: Ramificação dinâmica solicitada
-                subcategoria = "Nenhuma"
-                if area_principal == "Sistemas":
-                    subcategoria = st.selectbox(
-                        "Sistema Específico", ["Sistema RM", "Sistema SISMA"]
-                    )
-                elif area_principal == "Infraestrutura":
-                    subcategoria = st.selectbox(
-                        "Serviço Específico", ["Redes", "Computador"]
-                    )
-
-                detalhes = st.text_area(
-                    "Detalhes adicionais para a equipe", value=problema_usuario
-                )
-
-                submit = st.form_submit_button(
-                    "🚀 Enviar Chamado para T.I.", use_container_width=True
-                )
-
-                if submit:
-                    if not nome_solicitante:
-                        st.error(
-                            "Por favor, preencha o seu nome antes de enviar."
-                        )
-                    elif area_principal == "Selecione a área...":
-                        st.error("Por favor, selecione uma área de destino.")
-                    else:
-                        st.success(
-                            f"✅ Chamado aberto com sucesso na área de **{area_principal} -> {subcategoria}**! Nossa equipe entrará em contato."
-                        )
-                        st.session_state.abrir_chamado = False
-
-# Coluna lateral com informações
-with col_info:
-    st.subheader("ℹ️ Atendimento T.I.")
-
-    with st.container(border=True):
-        st.markdown("**⏰ Horário de Funcionamento**")
-        st.write("Segunda a Sexta: 08:00 às 18:00")
-
-        st.markdown("**📞 Contatos Rápidos**")
-        st.write("Suporte Interno: **#1020**")
-
-        st.markdown("**🗂️ Áreas e Ramificações**")
-        st.markdown(
-            "• **Sistemas:**\n"
-            "  - Sistema RM\n"
-            "  - Sistema SISMA\n"
-            "• **Infraestrutura:**\n"
-            "  - Redes\n"
-            "  - Computador"
-        )
