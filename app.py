@@ -1,5 +1,7 @@
 import base64
 import html
+import hmac
+import os
 import mimetypes
 import requests
 import re
@@ -236,6 +238,50 @@ def pesquisar_totvs(assunto):
     return pontuados[:3], len(artigos) > len(ARTIGOS_REFERENCIA)
 
 
+STATUS_OPCOES = ["Aberto", "Em andamento", "Aguardando usuário", "Resolvido", "Cancelado"]
+
+
+def credenciais_admin():
+    # Configure em Streamlit Cloud > App settings > Secrets.
+    try:
+        usuario = st.secrets.get("ADMIN_USER", "")
+        senha = st.secrets.get("ADMIN_PASSWORD", "")
+    except (FileNotFoundError, KeyError):
+        usuario, senha = "", ""
+    return str(usuario or os.getenv("ADMIN_USER", "")), str(senha or os.getenv("ADMIN_PASSWORD", ""))
+
+
+def listar_chamados(status="Todos", busca=""):
+    sql = "SELECT * FROM chamados WHERE 1=1"
+    parametros = []
+    if status != "Todos":
+        sql += " AND status = ?"
+        parametros.append(status)
+    if busca:
+        sql += " AND (upper(protocolo) LIKE ? OR lower(nome) LIKE ? OR lower(titulo) LIKE ?)"
+        parametros.extend([f"%{busca.upper()}%", f"%{busca.lower()}%", f"%{busca.lower()}%"])
+    sql += " ORDER BY substr(criado_em,7,4) DESC, substr(criado_em,4,2) DESC, substr(criado_em,1,2) DESC, substr(criado_em,12,5) DESC"
+    with conectar() as conn:
+        conn.row_factory = sqlite3.Row
+        return conn.execute(sql, parametros).fetchall()
+
+
+def atualizar_status(protocolo, status):
+    if status not in STATUS_OPCOES:
+        raise ValueError("Status inválido")
+    with conectar() as conn:
+        conn.execute("UPDATE chamados SET status=? WHERE protocolo=?", (status, protocolo))
+
+
+def anexos_do_chamado(protocolo):
+    with conectar() as conn:
+        conn.row_factory = sqlite3.Row
+        return conn.execute(
+            "SELECT id, nome_original, nome_salvo FROM anexos_chamado WHERE protocolo=? ORDER BY id",
+            (protocolo,)
+        ).fetchall()
+
+
 inicializar()
 
 # Cabeçalho: logo DENTRO da tarja preta.
@@ -261,7 +307,7 @@ st.markdown(cabecalho, unsafe_allow_html=True)
 
 pagina = st.radio(
     "Navegação",
-    ["🏠 Início", "➕ Abrir chamado", "🔎 Consultar chamado", "📚 Soluções rápidas"],
+    ["🏠 Início", "➕ Abrir chamado", "🔎 Consultar chamado", "📚 Soluções rápidas", "🔐 Administração"],
     horizontal=True,
     label_visibility="collapsed",
 )
@@ -413,7 +459,7 @@ elif pagina == "🔎 Consultar chamado":
                         else:
                             st.warning(f"Arquivo indisponível: {anexo['nome_original']}")
 
-else:
+elif pagina == "📚 Soluções rápidas":
     st.subheader("Soluções rápidas")
     termo = st.text_input("Pesquise sua dúvida", placeholder="Ex.: não consigo acessar o RM")
     resultados = []
@@ -426,6 +472,74 @@ else:
     for titulo, solucao in resultados:
         with st.expander(titulo):
             st.write(solucao)
+
+elif pagina == "🔐 Administração":
+    st.subheader("Painel administrativo de chamados")
+    admin_user, admin_password = credenciais_admin()
+    if not admin_user or not admin_password:
+        st.warning("Acesso administrativo não configurado. Defina ADMIN_USER e ADMIN_PASSWORD nos Secrets do Streamlit Cloud.")
+    else:
+        if "admin_autenticado" not in st.session_state:
+            st.session_state.admin_autenticado = False
+        if not st.session_state.admin_autenticado:
+            with st.form("login_admin"):
+                usuario = st.text_input("Usuário administrador")
+                senha = st.text_input("Senha", type="password")
+                entrar = st.form_submit_button("Entrar", type="primary")
+            if entrar:
+                if hmac.compare_digest(usuario, admin_user) and hmac.compare_digest(senha, admin_password):
+                    st.session_state.admin_autenticado = True
+                    st.rerun()
+                else:
+                    st.error("Usuário ou senha inválidos.")
+        else:
+            if st.button("Sair da administração"):
+                st.session_state.admin_autenticado = False
+                st.rerun()
+            todos = listar_chamados()
+            abertos = sum(c["status"] == "Aberto" for c in todos)
+            andamento = sum(c["status"] == "Em andamento" for c in todos)
+            resolvidos = sum(c["status"] == "Resolvido" for c in todos)
+            c1, c2, c3, c4 = st.columns(4)
+            c1.metric("Total", len(todos))
+            c2.metric("Abertos", abertos)
+            c3.metric("Em andamento", andamento)
+            c4.metric("Resolvidos", resolvidos)
+            c1, c2 = st.columns([1, 2])
+            with c1:
+                filtro_status = st.selectbox("Filtrar por status", ["Aberto", "Todos"] + [s for s in STATUS_OPCOES if s != "Aberto"])
+            with c2:
+                pesquisa = st.text_input("Pesquisar número, solicitante ou assunto")
+            registros = listar_chamados(filtro_status, pesquisa.strip())
+            st.caption(f"{len(registros)} chamado(s) encontrado(s)")
+            for chamado in registros:
+                with st.expander(f"{chamado['protocolo']} · {chamado['titulo']} · {chamado['status']}"):
+                    st.write(f"**Solicitante:** {chamado['nome']} — {chamado['email']}")
+                    st.write(f"**Setor/Obra:** {chamado['setor']}")
+                    st.write(f"**Data:** {chamado['criado_em']}")
+                    st.write(f"**Área:** {chamado['area']} / {chamado['servico']} / {chamado['categoria']}")
+                    st.write(f"**Prioridade:** {chamado['prioridade']}")
+                    st.write(f"**Descrição:** {chamado['descricao']}")
+                    novo_status = st.selectbox(
+                        "Situação do chamado", STATUS_OPCOES,
+                        index=STATUS_OPCOES.index(chamado["status"]) if chamado["status"] in STATUS_OPCOES else 0,
+                        key=f"status_{chamado['protocolo']}"
+                    )
+                    if st.button("Salvar situação", key=f"salvar_{chamado['protocolo']}"):
+                        atualizar_status(chamado["protocolo"], novo_status)
+                        st.success("Situação atualizada.")
+                        st.rerun()
+                    for anexo in anexos_do_chamado(chamado["protocolo"]):
+                        arquivo = ANEXOS / chamado["protocolo"] / anexo["nome_salvo"]
+                        if arquivo.is_file():
+                            st.download_button(
+                                f"📎 {anexo['nome_original']}", arquivo.read_bytes(),
+                                file_name=anexo["nome_original"],
+                                mime=mimetypes.guess_type(anexo["nome_original"])[0] or "application/octet-stream",
+                                key=f"admin_anexo_{anexo['id']}"
+                            )
+                        else:
+                            st.caption(f"Anexo indisponível: {anexo['nome_original']}")
 
 # Rodapé compacto e centralizado. HTML em uma única string sem indentação.
 rodape = (
