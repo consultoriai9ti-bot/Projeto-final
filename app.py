@@ -16,14 +16,14 @@ st.markdown(
             background-color: #FFFFFF !important;
         }
         
-        /* Remove o espaçamento superior padrão do Streamlit para a faixa colar no topo */
+        /* Remove o espaçamento superior padrão do Streamlit */
         .block-container {
             padding-top: 0rem !important;
             padding-left: 2rem !important;
             padding-right: 2rem !important;
         }
 
-        /* Faixa preta de ponta a ponta no topo com texto centralizado */
+        /* Faixa preta de ponta a ponta no topo */
         .faixa-topo {
             background-color: #000000;
             width: 100vw;
@@ -32,7 +32,7 @@ st.markdown(
             right: calc(-50vw + 50%);
             padding: 20px 40px;
             margin-bottom: 2rem;
-            text-align: center; /* Centraliza o conteúdo */
+            text-align: center;
         }
 
         /* Cores e estilos dos textos dentro da faixa preta */
@@ -60,7 +60,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# 3. Cabeçalho com faixa preta de ponta a ponta centralizada
+# 3. Cabeçalho com faixa preta centralizada
 st.markdown(
     """
     <div class="faixa-topo">
@@ -71,7 +71,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Logo da Ellenco posicionada logo abaixo da faixa (ou ajuste conforme desejar)
+# Logo da Ellenco
 col_logo_dir, _ = st.columns([1, 4])
 with col_logo_dir:
     try:
@@ -134,9 +134,7 @@ with col_main:
         sugestoes = []
 
         for item in base_conhecimento:
-            matches = sum(
-                1 for palavra in item["palavras"] if palavra in texto_usuario
-            )
+            matches = sum(1 for palavra in item["palavras"] if palavra in texto_usuario)
             if matches > 0:
                 sugestoes.append((matches, item))
 
@@ -144,10 +142,7 @@ with col_main:
 
         # Sugestões automáticas (Deflection)
         if sugestoes:
-            st.warning(
-                "💡 Encontramos alguns procedimentos automáticos que podem te"
-                " ajudar:"
-            )
+            st.warning("💡 Encontramos alguns procedimentos automáticos que podem te ajudar:")
 
             for _, item in sugestoes[:2]:
                 with st.expander(f"📄 **{item['titulo']}**", expanded=True):
@@ -161,3 +156,83 @@ with col_main:
                             "Sim, resolveu!",
                             "Não, preciso abrir chamado",
                         ],
+                        key=f"res_{item['id']}",
+                        horizontal=True,
+                    )
+
+                    if resolvido == "Sim, resolveu!":
+                        st.success("🎉 Que ótimo! Chamado encerrado por autoatendimento.")
+                        st.session_state.abrir_chamado = False
+                        st.stop()
+                    elif resolvido == "Não, preciso abrir chamado":
+                        st.session_state.abrir_chamado = True
+
+        # Formulário com ramificação de áreas
+        if not sugestoes or st.session_state.abrir_chamado:
+            if not sugestoes:
+                st.info("ℹ️ Nenhuma solução automática foi encontrada. Vamos abrir um chamado para a equipe.")
+
+            st.markdown("---")
+            st.subheader("📝 Formulário de Abertura de Chamado")
+
+            with st.form(key="form_chamado", border=True):
+                col_c1, col_c2 = st.columns(2)
+
+                with col_c1:
+                    nome_solicitante = st.text_input("Seu Nome")
+
+                with col_c2:
+                    area_principal = st.selectbox(
+                        "Área de Destino",
+                        ["Selecione a área...", "Sistemas", "Infraestrutura"],
+                    )
+
+                subcategoria = "Nenhuma"
+                if area_principal == "Sistemas":
+                    subcategoria = st.selectbox(
+                        "Sistema Específico", ["Sistema RM", "Sistema SISMA"]
+                    )
+                elif area_principal == "Infraestrutura":
+                    subcategoria = st.selectbox(
+                        "Serviço Específico", ["Redes", "Computador"]
+                    )
+
+                detalhes = st.text_area(
+                    "Detalhes adicionais para a equipe", value=problema_usuario
+                )
+
+                submit = st.form_submit_button(
+                    "🚀 Enviar Chamado para T.I.", use_container_width=True
+                )
+
+                if submit:
+                    if not nome_solicitante:
+                        st.error("Por favor, preencha o seu nome antes de enviar.")
+                    elif area_principal == "Selecione a área...":
+                        st.error("Por favor, selecione uma área de destino.")
+                    else:
+                        st.success(
+                            f"✅ Chamado aberto com sucesso na área de **{area_principal} -> {subcategoria}**! Nossa equipe entrará em contato."
+                        )
+                        st.session_state.abrir_chamado = False
+
+# Coluna lateral com informações
+with col_info:
+    st.subheader("ℹ️ Atendimento T.I.")
+
+    with st.container(border=True):
+        st.markdown("**⏰ Horário de Funcionamento**")
+        st.write("Segunda a Sexta: 08:00 às 18:00")
+
+        st.markdown("**📞 Contatos Rápidos**")
+        st.write("Suporte Interno: **#1020**")
+
+        st.markdown("**🗂️ Áreas e Ramificações**")
+        st.markdown(
+            "• **Sistemas:**\n"
+            "  - Sistema RM\n"
+            "  - Sistema SISMA\n"
+            "• **Infraestrutura:**\n"
+            "  - Redes\n"
+            "  - Computador"
+        )
