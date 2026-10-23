@@ -185,3 +185,50 @@ else:
 
 st.divider()
 st.caption('Ellenco · Central de Ajuda T.I. | Protótipo interno em Streamlit')
+# RODAPÉ - CONTATOS DO SUPORTE T.I.
+
+st.markdown("---")
+
+st.markdown("""
+<style>
+.rodape-ti {
+    background-color: #111827;
+    padding: 28px;
+    border-radius: 12px;
+    text-align: center;
+    color: white;
+    margin-top: 35px;
+}
+
+.rodape-ti h3 {
+    color: white !important;
+    margin-bottom: 15px;
+}
+
+.rodape-ti p {
+    color: #E5E7EB;
+    font-size: 15px;
+    line-height: 1.8;
+}
+</style>
+
+<div class="rodape-ti">
+    <h3>🖥️ Central de Atendimento - T.I.</h3>
+
+    <p>
+        📞 Suporte T.I.: (11) 4000-1020<br>
+        📱 WhatsApp T.I.: (11) 90000-1020<br>
+        ☎️ Ramal Interno: 1020<br>
+        ✉️ E-mail: ti@ellenco.com.br
+    </p>
+
+    <p>
+        🕒 Atendimento: Segunda a Sexta-feira<br>
+        Das 08h às 18h
+    </p>
+
+    <p style="font-size:12px; color:#9CA3AF;">
+        © 2026 Ellenco Construções | Tecnologia da Informação
+    </p>
+</div>
+""", unsafe_allow_html=True)
