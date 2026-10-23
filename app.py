@@ -185,50 +185,67 @@ else:
 
 st.divider()
 st.caption('Ellenco · Central de Ajuda T.I. | Protótipo interno em Streamlit')
-# RODAPÉ - CONTATOS DO SUPORTE T.I.
+# RODAPÉ COMPACTO - CENTRAL DE AJUDA ELLENCO
 
-st.markdown("---")
+st.markdown(
+    """
+    <style>
+    .rodape-ellenco {
+        background-color: #111827;
+        color: #FFFFFF;
+        padding: 16px 24px;
+        border-radius: 8px;
+        margin-top: 25px;
+        text-align: center;
+        font-family: Arial, sans-serif;
+    }
 
-st.markdown("""
-<style>
-.rodape-ti {
-    background-color: #111827;
-    padding: 28px;
-    border-radius: 12px;
-    text-align: center;
-    color: white;
-    margin-top: 35px;
-}
+    .rodape-titulo {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 10px;
+        color: #FFFFFF;
+    }
 
-.rodape-ti h3 {
-    color: white !important;
-    margin-bottom: 15px;
-}
+    .rodape-contatos {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px 24px;
+        font-size: 12px;
+        color: #E5E7EB;
+    }
 
-.rodape-ti p {
-    color: #E5E7EB;
-    font-size: 15px;
-    line-height: 1.8;
-}
-</style>
+    .rodape-contatos span {
+        white-space: nowrap;
+    }
 
-<div class="rodape-ti">
-    <h3>🖥️ Central de Atendimento - T.I.</h3>
+    .rodape-final {
+        font-size: 11px;
+        color: #9CA3AF;
+        margin-top: 12px;
+    }
+    </style>
 
-    <p>
-        📞 Suporte T.I.: (11) 4000-1020<br>
-        📱 WhatsApp T.I.: (11) 90000-1020<br>
-        ☎️ Ramal Interno: 1020<br>
-        ✉️ E-mail: ti@ellenco.com.br
-    </p>
+    <div class="rodape-ellenco">
+        <div class="rodape-titulo">
+            🖥️ Central de Atendimento - T.I.
+        </div>
 
-    <p>
-        🕒 Atendimento: Segunda a Sexta-feira<br>
-        Das 08h às 18h
-    </p>
+        <div class="rodape-contatos">
+            <span>📞 (11) 4000-1020</span>
+            <span>📱 (11) 90000-1020</span>
+            <span>☎️ Ramal 1020</span>
+            <span>✉️ ti@ellenco.com.br</span>
+        </div>
 
-    <p style="font-size:12px; color:#9CA3AF;">
-        © 2026 Ellenco Construções | Tecnologia da Informação
-    </p>
-</div>
-""", unsafe_allow_html=True)
+        <div class="rodape-final">
+            Atendimento: Segunda a Sexta | 08h às 18h
+            &nbsp; • &nbsp;
+            © 2026 Ellenco Construções
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
