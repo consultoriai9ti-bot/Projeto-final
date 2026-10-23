@@ -7,7 +7,7 @@ st.set_page_config(
     layout="wide",
 )
 
-# 2. Injeção de CSS otimizado para a faixa preta e layout limpo
+# 2. Injeção de CSS otimizado para a faixa preta e fundo branco
 st.markdown(
     """
     <style>
@@ -150,11 +150,7 @@ with col_main:
 
                     resolvido = st.radio(
                         "Isso resolveu o seu problema?",
-                        [
-                            "Selecione...",
-                            "Sim, resolveu!",
-                            "Não, preciso abrir chamado",
-                        ],
+                        ["Selecione...", "Sim, resolveu!", "Não, preciso abrir chamado"],
                         key=f"res_{item['id']}",
                         horizontal=True,
                     )
@@ -189,4 +185,53 @@ with col_main:
                 subcategoria = "Nenhuma"
                 if area_principal == "Sistemas":
                     subcategoria = st.selectbox(
-                        "Sistema
+                        "Sistema Específico",
+                        ["Sistema RM", "Sistema SISMA"],
+                    )
+                elif area_principal == "Infraestrutura":
+                    subcategoria = st.selectbox(
+                        "Serviço Específico",
+                        ["Redes", "Computador"],
+                    )
+
+                detalhes = st.text_area(
+                    "Detalhes adicionais para a equipe",
+                    value=problema_usuario,
+                )
+
+                submit = st.form_submit_button(
+                    "🚀 Enviar Chamado para T.I.",
+                    use_container_width=True,
+                )
+
+                if submit:
+                    if not nome_solicitante:
+                        st.error("Por favor, preencha o seu nome antes de enviar.")
+                    elif area_principal == "Selecione a área...":
+                        st.error("Por favor, selecione uma área de destino.")
+                    else:
+                        st.success(
+                            f"✅ Chamado aberto com sucesso na área de **{area_principal} -> {subcategoria}**! Nossa equipe entrará em contato."
+                        )
+                        st.session_state.abrir_chamado = False
+
+# Coluna lateral com informações
+with col_info:
+    st.subheader("ℹ️ Atendimento T.I.")
+
+    with st.container(border=True):
+        st.markdown("**⏰ Horário de Funcionamento**")
+        st.write("Segunda a Sexta: 08:00 às 18:00")
+
+        st.markdown("**📞 Contatos Rápidos**")
+        st.write("Suporte Interno: **#1020**")
+
+        st.markdown("**🗂️ Áreas e Ramificações**")
+        st.markdown(
+            "• **Sistemas:**\n"
+            "  - Sistema RM\n"
+            "  - Sistema SISMA\n"
+            "• **Infraestrutura:**\n"
+            "  - Redes\n"
+            "  - Computador"
+        )
