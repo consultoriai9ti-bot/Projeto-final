@@ -1,6 +1,7 @@
 import base64
 import html
 import mimetypes
+import requests
 import re
 import sqlite3
 import uuid
@@ -185,6 +186,56 @@ def buscar_chamado(protocolo, email):
         return chamado, anexos
 
 
+TOTVS_URL = "https://centraldeatendimento.totvs.com/hc/pt-br/sections/360002878291-TOTVS-Linha-RM"
+ARTIGOS_REFERENCIA = [
+    ("RH - RM - FOP - Liberação de competência", "https://centraldeatendimento.totvs.com/hc/pt-br/articles/360060636393-RH-RM-FOP-Libera%C3%A7%C3%A3o-de-compet%C3%AAncia"),
+    ("RH - RM - Meu RH - Erro ao chamar serviço do RM Labore: Funcionário não tem grupo de acesso ao RM Portal associado", "https://centraldeatendimento.totvs.com/hc/pt-br/articles/10385790728983-RH-RM-Meu-RH-Erro-ao-chamar-servi%C3%A7o-do-RM-Labore-Funcion%C3%A1rio-n%C3%A3o-tem-grupo-de-acesso-ao-RM-Portal-associado"),
+    ("Framework - Linha RM - Processos não executam", "https://centraldeatendimento.totvs.com/hc/pt-br/articles/115015986907-Framework-Linha-RM-Frame-Processos-n%C3%A3o-executam"),
+]
+
+
+def termos(texto):
+    ignorar = {"para", "com", "uma", "que", "não", "nao", "erro", "sistema", "totvs", "linha", "como", "meu", "dos", "das", "por", "rm"}
+    return {p for p in re.findall(r"[a-z0-9]+", normalizar(texto)) if len(p) >= 3 and p not in ignorar}
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def pesquisar_totvs(assunto):
+    # API pública de pesquisa Zendesk: pode exigir autenticação ou ficar indisponível.
+    artigos = list(ARTIGOS_REFERENCIA)
+    try:
+        resposta = requests.get(
+            "https://centraldeatendimento.totvs.com/api/v2/help_center/articles/search.json",
+            params={"query": assunto, "locale": "pt-br", "per_page": 30},
+            headers={"Accept": "application/json", "User-Agent": "EllencoHelpdesk/1.0"},
+            timeout=8,
+        )
+        resposta.raise_for_status()
+        for item in resposta.json().get("results", []):
+            titulo = item.get("title", "")
+            url = item.get("html_url", "")
+            if titulo and url.startswith("https://centraldeatendimento.totvs.com/hc/pt-br/articles/"):
+                artigos.append((titulo, url))
+    except (requests.RequestException, ValueError):
+        pass
+
+    palavras = termos(assunto)
+    if len(palavras) < 2:
+        return [], False
+    pontuados = []
+    vistos = set()
+    for titulo, url in artigos:
+        if url in vistos:
+            continue
+        vistos.add(url)
+        titulo_termos = termos(titulo)
+        correspondencia = len(palavras & titulo_termos) / len(palavras)
+        if correspondencia >= 0.45 and len(palavras & titulo_termos) >= 2:
+            pontuados.append((correspondencia, titulo, url))
+    pontuados.sort(reverse=True)
+    return pontuados[:3], len(artigos) > len(ARTIGOS_REFERENCIA)
+
+
 inicializar()
 
 # Cabeçalho: logo DENTRO da tarja preta.
@@ -236,6 +287,26 @@ if pagina == "🏠 Início":
 elif pagina == "➕ Abrir chamado":
     st.subheader("Novo chamado de suporte")
     st.write("Preencha os dados. Você receberá um número do chamado ao registrar.")
+    with st.expander("🔍 Buscar solução na base oficial TOTVS RM antes de abrir", expanded=False):
+        st.caption("Para chamados do TOTVS RM, pesquise usando o assunto e a mensagem de erro, sem informar dados pessoais.")
+        consulta_rm = st.text_input("Assunto do problema no RM", key="consulta_totvs", placeholder="Ex.: liberar competência folha de pagamento")
+        if st.button("Pesquisar artigos TOTVS", key="pesquisar_rm"):
+            if len(termos(consulta_rm)) < 2:
+                st.warning("Informe pelo menos duas palavras relevantes sobre o problema.")
+            else:
+                with st.spinner("Procurando orientações da TOTVS..."):
+                    sugestoes, api_ok = pesquisar_totvs(consulta_rm)
+                if sugestoes:
+                    st.success("Encontramos artigos que podem ajudar. Confira se correspondem ao seu caso:")
+                    for score, titulo_artigo, link_artigo in sugestoes:
+                        st.markdown(f"📄 [{titulo_artigo}]({link_artigo}) — similaridade aproximada: {score:.0%}")
+                    st.info("Se algum artigo resolver seu problema, não é necessário abrir chamado. Caso contrário, continue abaixo.")
+                else:
+                    st.info("Nenhum artigo com correspondência suficiente foi encontrado. Continue com a abertura do chamado.")
+                if not api_ok:
+                    st.caption("A pesquisa automática completa da TOTVS não está disponível neste momento; foram consultados artigos de referência. Acesse também a base oficial abaixo.")
+                st.markdown(f"[Abrir Base de Conhecimento TOTVS Linha RM]({TOTVS_URL})")
+
     with st.form("novo_chamado"):
         st.markdown("**1. Seus dados**")
         c1, c2, c3 = st.columns([1.2, 1.4, 1])
