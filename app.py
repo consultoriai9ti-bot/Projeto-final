@@ -1,19 +1,57 @@
-import streamlit as str_app
+import streamlit as st
 
-# 1. Configuração da página
-str_app.set_page_config(
+# 1. Configuração da página (deve ser o primeiro comando)
+st.set_page_config(
     page_title="Central de Ajuda - Ellenco",
     page_icon="🖥️",
     layout="wide",
 )
 
-# 2. Injeção de CSS para forçar o fundo branco e padronizar o visual
-str_app.markdown(
+# 2. Injeção de CSS para o fundo branco, faixas e layout personalizado
+st.markdown(
     """
     <style>
+        /* Fundo principal da página */
         .stApp {
             background-color: #FFFFFF !important;
         }
+        
+        /* Remove o espaçamento superior padrão do Streamlit para a faixa colar no topo */
+        .block-container {
+            padding-top: 0rem !important;
+            padding-left: 2rem !important;
+            padding-right: 2rem !important;
+        }
+
+        /* Faixa preta de ponta a ponta no topo */
+        .faixa-topo {
+            background-color: #000000;
+            width: 100vw;
+            position: relative;
+            left: calc(-50vw + 50%);
+            right: calc(-50vw + 50%);
+            padding: 15px 40px;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Cores e estilos dos textos dentro da faixa preta */
+        .faixa-topo h1 {
+            color: #FFFFFF !important;
+            font-size: 1.8rem !important;
+            margin: 0 !important;
+            font-weight: 600;
+        }
+        
+        .faixa-topo p {
+            color: #CCCCCC !important;
+            margin: 0 !important;
+            font-size: 0.9rem;
+        }
+
+        /* Estilo dos containers e formulários */
         div[data-testid="stForm"], div[data-testid="stExpander"] {
             background-color: #F8F9FA !important;
             border-radius: 8px;
@@ -24,24 +62,32 @@ str_app.markdown(
     unsafe_allow_html=True,
 )
 
-# 3. Cabeçalho com Logo e Título com computador
-col_logo, col_titulo = str_app.columns([1, 4], vertical_alignment="center")
+# 3. Cabeçalho com faixa preta de ponta a ponta
+st.markdown(
+    """
+    <div class="faixa-topo">
+        <div>
+            <h1>🖥️ Central de Ajuda - Suporte T.I.</h1>
+            <p>Autoatendimento e Abertura de Chamados Técnicos</p>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
-with col_logo:
+# Coluna opcional para a Logo (caso queira exibir abaixo ou integrada, ajuste conforme preferência)
+# Aqui mantemos a estrutura de colunas principal logo abaixo da faixa
+col_logo_dir, _ = st.columns([1, 4])
+with col_logo_dir:
     try:
-        # Busca o arquivo logo.JPG na mesma pasta do script
-        str_app.image("logo.JPG", width=180)
+        st.image("logo.JPG", width=160)
     except Exception:
         try:
-            str_app.image("logo.jpg", width=180)
+            st.image("logo.jpg", width=160)
         except Exception:
-            str_app.markdown("### **🖥️ [ ELLENCO ]**")
+            pass
 
-with col_titulo:
-    str_app.title("🖥️ Central de Ajuda - Suporte T.I.")
-    str_app.caption("Autoatendimento e Abertura de Chamados Técnicos")
-
-str_app.divider()
+st.markdown("<br>", unsafe_allow_html=True)
 
 # Base de conhecimento simulada
 base_conhecimento = [
@@ -72,16 +118,16 @@ base_conhecimento = [
 ]
 
 # Inicializa o session_state
-if "abrir_chamado" not in str_app.session_state:
-    str_app.session_state.abrir_chamado = False
+if "abrir_chamado" not in st.session_state:
+    st.session_state.abrir_chamado = False
 
 # Layout principal em 2 colunas
-col_main, col_info = str_app.columns([2, 1], gap="large")
+col_main, col_info = st.columns([2, 1], gap="large")
 
 with col_main:
-    str_app.subheader("1. Descreva a sua dúvida ou problema")
+    st.subheader("1. Descreva a sua dúvida ou problema")
 
-    problema_usuario = str_app.text_area(
+    problema_usuario = st.text_area(
         label="Descrição do problema",
         placeholder="Ex: Não consigo acessar o SISMA ou problema com meu computador...",
         height=120,
@@ -103,17 +149,17 @@ with col_main:
 
         # Sugestões automáticas (Deflection)
         if sugestoes:
-            str_app.warning(
+            st.warning(
                 "💡 Encontramos alguns procedimentos automáticos que podem te"
                 " ajudar:"
             )
 
             for _, item in sugestoes[:2]:
-                with str_app.expander(f"📄 **{item['titulo']}**", expanded=True):
-                    str_app.write(item["solucao"])
-                    str_app.markdown("---")
+                with st.expander(f"📄 **{item['titulo']}**", expanded=True):
+                    st.write(item["solucao"])
+                    st.markdown("---")
 
-                    resolvido = str_app.radio(
+                    resolvido = st.radio(
                         "Isso resolveu o seu problema?",
                         [
                             "Selecione...",
@@ -125,34 +171,34 @@ with col_main:
                     )
 
                     if resolvido == "Sim, resolveu!":
-                        str_app.success(
+                        st.success(
                             "🎉 Que ótimo! Chamado encerrado por autoatendimento."
                         )
-                        str_app.session_state.abrir_chamado = False
-                        str_app.stop()
+                        st.session_state.abrir_chamado = False
+                        st.stop()
                     elif resolvido == "Não, preciso abrir chamado":
-                        str_app.session_state.abrir_chamado = True
+                        st.session_state.abrir_chamado = True
 
         # Formulário com ramificação de áreas
-        if not sugestoes or str_app.session_state.abrir_chamado:
+        if not sugestoes or st.session_state.abrir_chamado:
             if not sugestoes:
-                str_app.info(
+                st.info(
                     "ℹ️ Nenhuma solução automática foi encontrada. Vamos abrir"
                     " um chamado para a equipe."
                 )
 
-            str_app.markdown("---")
-            str_app.subheader("📝 Formulário de Abertura de Chamado")
+            st.markdown("---")
+            st.subheader("📝 Formulário de Abertura de Chamado")
 
-            with str_app.form(key="form_chamado", border=True):
-                col_c1, col_c2 = str_app.columns(2)
+            with st.form(key="form_chamado", border=True):
+                col_c1, col_c2 = st.columns(2)
 
                 with col_c1:
-                    nome_solicitante = str_app.text_input("Seu Nome")
+                    nome_solicitante = st.text_input("Seu Nome")
 
                 with col_c2:
                     # 1º Nível: Escolha da Área Principal
-                    area_principal = str_app.selectbox(
+                    area_principal = st.selectbox(
                         "Área de Destino",
                         ["Selecione a área...", "Sistemas", "Infraestrutura"],
                     )
@@ -160,48 +206,48 @@ with col_main:
                 # 2º Nível: Ramificação dinâmica solicitada
                 subcategoria = "Nenhuma"
                 if area_principal == "Sistemas":
-                    subcategoria = str_app.selectbox(
+                    subcategoria = st.selectbox(
                         "Sistema Específico", ["Sistema RM", "Sistema SISMA"]
                     )
                 elif area_principal == "Infraestrutura":
-                    subcategoria = str_app.selectbox(
+                    subcategoria = st.selectbox(
                         "Serviço Específico", ["Redes", "Computador"]
                     )
 
-                detalhes = str_app.text_area(
+                detalhes = st.text_area(
                     "Detalhes adicionais para a equipe", value=problema_usuario
                 )
 
-                submit = str_app.form_submit_button(
+                submit = st.form_submit_button(
                     "🚀 Enviar Chamado para T.I.", use_container_width=True
                 )
 
                 if submit:
                     if not nome_solicitante:
-                        str_app.error(
+                        st.error(
                             "Por favor, preencha o seu nome antes de enviar."
                         )
                     elif area_principal == "Selecione a área...":
-                        str_app.error("Por favor, selecione uma área de destino.")
+                        st.error("Por favor, selecione uma área de destino.")
                     else:
-                        str_app.success(
+                        st.success(
                             f"✅ Chamado aberto com sucesso na área de **{area_principal} -> {subcategoria}**! Nossa equipe entrará em contato."
                         )
-                        str_app.session_state.abrir_chamado = False
+                        st.session_state.abrir_chamado = False
 
 # Coluna lateral com informações
 with col_info:
-    str_app.subheader("ℹ️ Atendimento T.I.")
+    st.subheader("ℹ️ Atendimento T.I.")
 
-    with str_app.container(border=True):
-        str_app.markdown("**⏰ Horário de Funcionamento**")
-        str_app.write("Segunda a Sexta: 08:00 às 18:00")
+    with st.container(border=True):
+        st.markdown("**⏰ Horário de Funcionamento**")
+        st.write("Segunda a Sexta: 08:00 às 18:00")
 
-        str_app.markdown("**📞 Contatos Rápidos**")
-        str_app.write("Suporte Interno: **#1020**")
+        st.markdown("**📞 Contatos Rápidos**")
+        st.write("Suporte Interno: **#1020**")
 
-        str_app.markdown("**🗂️ Áreas e Ramificações**")
-        str_app.markdown(
+        st.markdown("**🗂️ Áreas e Ramificações**")
+        st.markdown(
             "• **Sistemas:**\n"
             "  - Sistema RM\n"
             "  - Sistema SISMA\n"
