@@ -67,10 +67,11 @@ AREAS = {
         "Outros sistemas": ["Acesso / Permissões", "Erro no sistema", "Outros"],
     },
     "Infraestrutura": {
-        "Computador / Notebook": ["Não liga", "Lentidão / Travamento", "Instalação", "Outros"],
-        "Rede / Internet": ["Sem conexão", "Wi-Fi", "Lentidão", "Outros"],
-        "Impressora": ["Não imprime", "Instalação", "Outros"],
-        "E-mail": ["Acesso", "Envio / Recebimento", "Outros"],
+        "E-mail": ["Não consigo acessar", "Não envia ou recebe", "Configuração", "Outros"],
+        "Computador": ["Não liga", "Lentidão / Travamento", "Instalação de programas", "Outros"],
+        "Impressora": ["Não imprime", "Instalação / Configuração", "Atolamento de papel", "Outros"],
+        "Telefonia": ["Ramal não funciona", "Telefone sem sinal", "Configuração de ramal", "Outros"],
+        "Internet": ["Sem conexão", "Wi-Fi", "Lentidão", "Outros"],
     },
 }
 BASE_CONHECIMENTO = [
