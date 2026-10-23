@@ -185,57 +185,30 @@ else:
 
 st.divider()
 st.caption('Ellenco · Central de Ajuda T.I. | Protótipo interno em Streamlit')
-# RODAPÉ CENTRALIZADO - ELLENCO
+# ==========================================
+# RODAPÉ COMPACTO - SUPORTE T.I. ELLENCO
+# ==========================================
 
-import textwrap
+st.divider()
 
 st.markdown(
-    textwrap.dedent("""
-    <div style="
-        width: 100%;
-        text-align: center;
-        padding: 12px 8px;
-        margin-top: 20px;
-        border-top: 1px solid #D1D5DB;
-        font-family: Arial, sans-serif;
-    ">
-        <div style="
-            font-size: 14px;
-            font-weight: bold;
-            color: #111827;
-            margin-bottom: 8px;
-        ">
-            🖥️ Central de Atendimento - T.I.
-        </div>
+    "**🖥️ Central de Atendimento - T.I.**",
+    text_alignment="center"
+)
 
-        <div style="
-            font-size: 12px;
-            color: #374151;
-            line-height: 1.8;
-        ">
-            📞 (11) 4000-1020 &nbsp; | &nbsp;
-            📱 (11) 90000-1020 &nbsp; | &nbsp;
-            ☎️ Ramal 1020
-        </div>
+st.markdown(
+    "📞 (11) 4000-1020 &nbsp;&nbsp; | &nbsp;&nbsp; "
+    "📱 (11) 90000-1020 &nbsp;&nbsp; | &nbsp;&nbsp; "
+    "☎️ Ramal 1020",
+    text_alignment="center"
+)
 
-        <div style="
-            font-size: 12px;
-            color: #374151;
-            margin-top: 3px;
-        ">
-            ✉️ ti@ellenco.com.br
-        </div>
+st.markdown(
+    "✉️ **ti@ellenco.com.br**",
+    text_alignment="center"
+)
 
-        <div style="
-            font-size: 11px;
-            color: #6B7280;
-            margin-top: 8px;
-        ">
-            Segunda a sexta | 08h às 18h
-            &nbsp; • &nbsp;
-            © 2026 Ellenco Construções
-        </div>
-    </div>
-    """),
-    unsafe_allow_html=True
+st.markdown(
+    "Segunda a sexta | 08h às 18h | © 2026 Ellenco Construções",
+    text_alignment="center"
 )
