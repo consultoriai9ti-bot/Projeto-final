@@ -7,7 +7,7 @@ st.set_page_config(
     layout="wide",
 )
 
-# 2. Injeção de CSS para o fundo branco, faixas e centralização do título
+# 2. Injeção de CSS otimizado para evitar cortes na faixa preta
 st.markdown(
     """
     <style>
@@ -16,37 +16,36 @@ st.markdown(
             background-color: #FFFFFF !important;
         }
         
-        /* Remove o espaçamento superior padrão do Streamlit */
+        /* Remove o espaçamento padrão superior e lateral do Streamlit */
         .block-container {
             padding-top: 0rem !important;
             padding-left: 2rem !important;
             padding-right: 2rem !important;
         }
 
-        /* Faixa preta de ponta a ponta no topo */
+        /* Faixa preta de ponta a ponta corrigida (sem overflow lateral) */
         .faixa-topo {
             background-color: #000000;
-            width: 100vw;
-            position: relative;
-            left: calc(-50vw + 50%);
-            right: calc(-50vw + 50%);
-            padding: 20px 40px;
+            width: calc(100% + 4rem);
+            margin-left: -2rem;
+            margin-right: -2rem;
+            padding: 25px 20px;
             margin-bottom: 2rem;
             text-align: center;
         }
 
-        /* Cores e estilos dos textos dentro da faixa preta */
+        /* Título e subtítulo centralizados com tamanho responsivo */
         .faixa-topo h1 {
             color: #FFFFFF !important;
-            font-size: 2rem !important;
+            font-size: 2.2rem !important;
             margin: 0 !important;
-            font-weight: 600;
+            font-weight: 700;
         }
         
         .faixa-topo p {
             color: #CCCCCC !important;
-            margin: 5px 0 0 0 !important;
-            font-size: 1rem;
+            margin: 8px 0 0 0 !important;
+            font-size: 1.1rem;
         }
 
         /* Estilo dos containers e formulários */
@@ -60,7 +59,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# 3. Cabeçalho com faixa preta centralizada
+# 3. Cabeçalho com faixa preta centralizada e sem cortes
 st.markdown(
     """
     <div class="faixa-topo">
@@ -205,34 +204,4 @@ with col_main:
                     "🚀 Enviar Chamado para T.I.", use_container_width=True
                 )
 
-                if submit:
-                    if not nome_solicitante:
-                        st.error("Por favor, preencha o seu nome antes de enviar.")
-                    elif area_principal == "Selecione a área...":
-                        st.error("Por favor, selecione uma área de destino.")
-                    else:
-                        st.success(
-                            f"✅ Chamado aberto com sucesso na área de **{area_principal} -> {subcategoria}**! Nossa equipe entrará em contato."
-                        )
-                        st.session_state.abrir_chamado = False
-
-# Coluna lateral com informações
-with col_info:
-    st.subheader("ℹ️ Atendimento T.I.")
-
-    with st.container(border=True):
-        st.markdown("**⏰ Horário de Funcionamento**")
-        st.write("Segunda a Sexta: 08:00 às 18:00")
-
-        st.markdown("**📞 Contatos Rápidos**")
-        st.write("Suporte Interno: **#1020**")
-
-        st.markdown("**🗂️ Áreas e Ramificações**")
-        st.markdown(
-            "• **Sistemas:**\n"
-            "  - Sistema RM\n"
-            "  - Sistema SISMA\n"
-            "• **Infraestrutura:**\n"
-            "  - Redes\n"
-            "  - Computador"
-        )
+                if submit
