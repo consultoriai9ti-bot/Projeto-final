@@ -101,16 +101,15 @@ st.markdown(CSS, unsafe_allow_html=True)
 
 AREAS = {
     "Sistemas": {
-        "TOTVS RM": ["Folha / Ponto", "Compras / Estoque", "Financeiro / Fiscal", "Acesso / Permissões", "Outros"],
+        "Sistema RM": ["Folha / Ponto", "Compras / Estoque", "Financeiro / Fiscal", "Acesso / Permissões", "Outros"],
         "SISMA": ["Acesso / Permissões", "Erro no sistema", "Outros"],
-        "Outros sistemas": ["Acesso / Permissões", "Erro no sistema", "Outros"],
     },
     "Infraestrutura": {
-        "E-mail": ["Não consigo acessar", "Não envia ou recebe", "Configuração", "Outros"],
-        "Computador": ["Não liga", "Lentidão / Travamento", "Instalação de programas", "Outros"],
-        "Impressora": ["Não imprime", "Instalação / Configuração", "Atolamento de papel", "Outros"],
-        "Telefonia": ["Ramal não funciona", "Telefone sem sinal", "Configuração de ramal", "Outros"],
+        "Redes": ["Sem acesso à rede", "Rede lenta", "Compartilhamento de pastas", "Outros"],
         "Internet": ["Sem conexão", "Wi-Fi", "Lentidão", "Outros"],
+        "E-mail": ["Não consigo acessar", "Não envia ou recebe", "Configuração", "Outros"],
+        "Impressoras": ["Não imprime", "Instalação / Configuração", "Atolamento de papel", "Outros"],
+        "Notebook": ["Não liga", "Lentidão / Travamento", "Instalação de programas", "Outros"],
     },
 }
 BASE_CONHECIMENTO = [
