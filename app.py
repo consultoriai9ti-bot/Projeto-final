@@ -66,17 +66,25 @@ def situacao_sla(chamado, agora=None):
 CSS = """<style>
 html,body,.stApp,[data-testid="stAppViewContainer"],[data-testid="stMain"]{background:#f5f7fa!important;color:#243247!important}
 [data-testid="stHeader"]{background:#f5f7fa!important}
+/* Cabeçalho e navegação em uma única área azul, sem cortes. */
+.st-key-cabecalho_ellenco{background:linear-gradient(115deg,#061b35 0%,#092d4d 68%,#073b62 100%)!important;border:1px solid #145578!important;border-radius:18px!important;padding:clamp(16px,2.4vw,30px)!important;box-shadow:0 8px 24px #0a284321!important;overflow:visible!important}
+.st-key-cabecalho_ellenco [data-testid="stVerticalBlock"]{gap:clamp(12px,1.5vw,18px)!important}
+.st-key-cabecalho_ellenco [data-testid="stElementContainer"]{min-width:0}
+
 .block-container{max-width:1360px!important;width:100%!important;padding:1.2rem clamp(12px,3vw,38px) 2rem!important}
 [data-testid="stMainBlockContainer"]{overflow-x:clip}
 .stApp h1,.stApp h2,.stApp h3,.stApp p,.stApp label{color:#243247}
 [data-testid="stWidgetLabel"] p{color:#344054!important}
-.top-brand{display:flex;align-items:center;gap:clamp(10px,1.4vw,20px);min-height:68px;background:#fff;padding:12px 20px;border:1px solid #e1e7ef;border-radius:14px;width:100%;box-sizing:border-box;box-shadow:0 2px 12px #1e293b08}
-.top-brand .hero-logo{width:clamp(90px,10vw,140px);max-height:50px;object-fit:contain}
+/* Logo não usa altura fixa nem recorte. */
+.top-brand{display:flex;align-items:center;flex-wrap:wrap;gap:clamp(12px,2vw,24px);width:100%;min-height:74px;padding:0;margin:0;box-sizing:border-box}
+.top-brand .logo-frame{display:flex;align-items:center;justify-content:center;background:#fff;border-radius:9px;padding:9px 15px;min-height:62px;max-width:100%;box-sizing:border-box}
+.top-brand .hero-logo{display:block;width:clamp(115px,13vw,185px);height:auto;max-height:68px;object-fit:contain;object-position:center}
 .top-brand .hero-logo-placeholder{color:#1466a3;font-weight:900;font-size:1.3rem}
-.top-brand-title{border-left:1px solid #d6e0eb;padding-left:14px;color:#152a41;font-size:clamp(1rem,1.45vw,1.35rem);font-weight:750;line-height:1.3}
-.st-key-menu_inicio button,.st-key-menu_abrir button,.st-key-menu_consultar button,.st-key-menu_solucoes button,.st-key-menu_admin button{background:#fff!important;border:1px solid #cbd8e6!important;border-radius:10px!important;color:#1f4467!important;min-height:44px!important;padding:7px 8px!important;width:100%!important;white-space:normal!important}
-.st-key-menu_inicio button p,.st-key-menu_abrir button p,.st-key-menu_consultar button p,.st-key-menu_solucoes button p,.st-key-menu_admin button p{color:#1f4467!important;font-weight:700!important;font-size:clamp(.73rem,.92vw,.92rem)!important;line-height:1.25!important}
-.st-key-menu_inicio button:hover,.st-key-menu_abrir button:hover,.st-key-menu_consultar button:hover,.st-key-menu_solucoes button:hover,.st-key-menu_admin button:hover{border-color:#1683c6!important;background:#eaf5fc!important}
+.top-brand-title{border-left:1px solid #4c89a7;padding-left:clamp(12px,2vw,24px);color:#fff!important;font-size:clamp(1.1rem,2vw,1.65rem);font-weight:750;line-height:1.3;overflow-wrap:anywhere}
+.st-key-cabecalho_ellenco .stButton button{background:#092744!important;border:1px solid #1884bc!important;border-radius:11px!important;color:#fff!important;min-height:50px!important;padding:9px 6px!important;width:100%!important;white-space:normal!important;box-shadow:none!important}
+.st-key-cabecalho_ellenco .stButton button p{color:#fff!important;font-weight:700!important;font-size:clamp(.72rem,.98vw,.98rem)!important;line-height:1.25!important}
+.st-key-cabecalho_ellenco .stButton button:hover{border-color:#19d3e5!important;background:#0a4365!important}
+.st-key-cabecalho_ellenco .stButton button[kind="primary"]{background:linear-gradient(115deg,#027a9f,#075c83)!important;border-color:#1cc9e6!important}
 .home-hero{background:linear-gradient(120deg,#071b32 0%,#0a2c4c 60%,#123b59 100%);border:1px solid #225373;border-radius:18px;padding:clamp(24px,4vw,52px);margin-top:12px;box-shadow:0 8px 26px #071b3222;width:100%;box-sizing:border-box;overflow-wrap:anywhere}
 .home-hero .eyebrow{font-size:.76rem;font-weight:800;letter-spacing:2px;color:#4de1e5!important}
 .home-hero h1{font-size:clamp(1.7rem,3vw,2.8rem);line-height:1.15;margin:12px 0;color:#ffffff!important}
@@ -86,7 +94,8 @@ html,body,.stApp,[data-testid="stAppViewContainer"],[data-testid="stMain"]{backg
 .small-card,[data-testid="stMetric"]{background:#fff!important;border:1px solid #dbe4ee!important;color:#243247!important;border-radius:12px;padding:14px}.small-card p,[data-testid="stMetric"] *{color:#243247!important}
 [data-testid="stForm"],[data-testid="stVerticalBlockBorderWrapper"]{background:#fff;border-color:#dbe4ee!important;border-radius:12px}
 .rodape{border-top:1px solid #d9e3ec;margin-top:24px;padding:14px 8px 4px;text-align:center}.rodape-titulo,.rodape-contatos,.rodape-final{color:#64748b!important}.rodape-titulo{font-size:13px;font-weight:700}.rodape-contatos{font-size:12px;line-height:1.8}.rodape-final{font-size:11px}
-@media(max-width:760px){.top-brand{flex-wrap:wrap}.top-brand-title{font-size:1rem}.block-container{padding-left:12px!important;padding-right:12px!important}}
+@media(max-width:760px){.top-brand{flex-wrap:wrap}.top-brand-title{font-size:1rem}.block-container{padding-left:12px!important;padding-right:12px!important}.st-key-cabecalho_ellenco{padding:14px!important}}
+@media(max-width:950px){.top-brand-title{font-size:clamp(1rem,2.4vw,1.3rem)}}
 </style>"""
 st.markdown(CSS, unsafe_allow_html=True)
 
@@ -343,24 +352,23 @@ else:
     logo_html = '<div class="hero-logo-placeholder">ELLENCO</div>'
 
 cabecalho = (
-    '<div class="top-brand">' + logo_html +
-    '<div class="top-brand-title">Central de Atendimento - T.I.</div></div>'
+    '<div class="top-brand"><div class="logo-frame">' + logo_html +
+    '</div><div class="top-brand-title">Central de Atendimento - T.I.</div></div>'
 )
-# Cabeçalho em largura total: não comprime logo e título na coluna do menu.
-st.markdown(cabecalho, unsafe_allow_html=True)
-
-# Botões verdadeiros, com navegação preservada entre as atualizações do Streamlit.
+# Área única: marca e menu, ambos sobre o mesmo azul-marinho.
 PAGINAS = ["🏠 Início", "➕ Abrir chamado", "🔎 Consultar chamado", "📚 Soluções rápidas", "🔐 Administração"]
 if "pagina_atual" not in st.session_state:
     st.session_state.pagina_atual = PAGINAS[0]
 nomes_botoes = ["menu_inicio", "menu_abrir", "menu_consultar", "menu_solucoes", "menu_admin"]
-colunas_menu = st.columns(5, gap="small")
-for i, coluna in enumerate(colunas_menu):
-    with coluna:
-        if st.button(PAGINAS[i], key=nomes_botoes[i], use_container_width=True,
-                     type="primary" if st.session_state.pagina_atual == PAGINAS[i] else "secondary"):
-            st.session_state.pagina_atual = PAGINAS[i]
-            st.rerun()
+with st.container(key="cabecalho_ellenco"):
+    st.markdown(cabecalho, unsafe_allow_html=True)
+    colunas_menu = st.columns(5, gap="small")
+    for i, coluna in enumerate(colunas_menu):
+        with coluna:
+            if st.button(PAGINAS[i], key=nomes_botoes[i], use_container_width=True,
+                         type="primary" if st.session_state.pagina_atual == PAGINAS[i] else "secondary"):
+                st.session_state.pagina_atual = PAGINAS[i]
+                st.rerun()
 pagina = st.session_state.pagina_atual
 
 if pagina == "🏠 Início":
