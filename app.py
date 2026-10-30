@@ -410,8 +410,18 @@ elif pagina == "➕ Abrir chamado":
                     st.caption("A pesquisa automática completa da TOTVS não está disponível neste momento; foram consultados artigos de referência. Acesse também a base oficial abaixo.")
                 st.markdown(f"[Abrir Base de Conhecimento TOTVS Linha RM]({TOTVS_URL})")
 
+    # Seletores fora do st.form: atualizam imediatamente a cada alteração.
+    st.markdown("**1. Selecione o tipo de atendimento**")
+    c_area, c_servico, c_categoria = st.columns(3)
+    with c_area:
+        area = st.selectbox("Área responsável *", list(AREAS), key="area_chamado")
+    with c_servico:
+        servico = st.selectbox("Sistema ou equipamento *", list(AREAS[area]), key=f"servico_{area}")
+    with c_categoria:
+        categoria = st.selectbox("Categoria *", AREAS[area][servico], key=f"categoria_{area}_{servico}")
+
     with st.form("novo_chamado"):
-        st.markdown("**1. Seus dados**")
+        st.markdown("**2. Seus dados**")
         c1, c2, c3 = st.columns([1.2, 1.4, 1])
         with c1:
             nome = st.text_input("Nome completo *")
@@ -420,14 +430,7 @@ elif pagina == "➕ Abrir chamado":
         with c3:
             setor = st.text_input("Setor / Obra *")
 
-        st.markdown("**2. Sobre o problema**")
-        c1, c2, c3 = st.columns(3)
-        with c1:
-            area = st.selectbox("Área responsável *", list(AREAS))
-        with c2:
-            servico = st.selectbox("Sistema ou equipamento *", list(AREAS[area]))
-        with c3:
-            categoria = st.selectbox("Categoria *", AREAS[area][servico])
+        st.markdown("**3. Descrição do problema**")
         titulo = st.text_input("Assunto do chamado *", placeholder="Ex.: Erro ao acessar o RM")
         descricao = st.text_area(
             "Descreva o problema *", height=135,
