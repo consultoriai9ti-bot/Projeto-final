@@ -547,8 +547,6 @@ elif pagina == "🔎 Consultar chamado":
                 type="primary",
                 use_container_width=True,
             )
-            st.caption("Caso o portal não direcione para a área de chamados, acesse-o pelo link de atendimento fornecido pela TOTVS. Links SAML com identificador de solicitação podem expirar.")
-            st.markdown("**Como consultar:** abra o portal, autentique-se e procure a área de chamados/solicitações.")
         st.caption("Os chamados TOTVS não são importados automaticamente para a Central de Ajuda Ellenco.")
 
 elif pagina == "📚 Soluções rápidas":
