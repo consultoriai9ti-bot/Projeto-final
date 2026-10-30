@@ -97,6 +97,19 @@ div[data-testid="stForm"],div[data-testid="stVerticalBlockBorderWrapper"] {borde
 }
 </style>
 """
+CSS += """<style>
+.home-art {height:330px;background-size:contain;background-position:center;background-repeat:no-repeat;background-color:#02060b;border:1px solid #17283b;border-radius:16px;box-shadow:0 15px 42px #00152220}
+.home-intro {text-align:center;margin:18px 0 22px}
+.home-intro h2 {font-size:2rem;color:#13243a;margin:5px 0}
+.home-intro p {color:#52657d;margin:0}
+.home-kicker {color:#087bc1;font-size:.75rem;letter-spacing:2.5px;font-weight:750}
+.home-card {background:#07111e;border:1px solid #067bd7;color:white;border-radius:13px;padding:22px 16px;min-height:160px;margin-bottom:12px}
+.home-card.teal {border-color:#00c8b6}
+.home-card.slate {border-color:#8092a8}
+.home-card h3 {font-size:1.05rem;color:#fff;margin:0 0 12px}
+.home-card p {font-size:.86rem;color:#c2cddd;margin:0}
+@media(max-width:640px){.home-art{height:230px}.home-intro h2{font-size:1.45rem}}
+</style>"""
 st.markdown(CSS, unsafe_allow_html=True)
 
 AREAS = {
@@ -371,21 +384,27 @@ pagina = st.radio(
 st.divider()
 
 if pagina == "🏠 Início":
-    st.subheader("Como podemos ajudar?")
-    a, b, c = st.columns(3)
-    with a:
-        st.markdown('<div class="small-card"><h3>➕ Abrir chamado</h3>'
-                    '<p>Registre uma solicitação para Sistemas ou Infraestrutura.</p></div>',
-                    unsafe_allow_html=True)
-    with b:
-        st.markdown('<div class="small-card"><h3>🔎 Acompanhar</h3>'
-                    '<p>Consulte o atendimento pelo número do chamado e e-mail.</p></div>',
-                    unsafe_allow_html=True)
-    with c:
-        st.markdown('<div class="small-card"><h3>📚 Autoatendimento</h3>'
-                    '<p>Veja procedimentos para resolver dúvidas comuns.</p></div>',
-                    unsafe_allow_html=True)
-    st.info("Selecione uma das opções no menu acima para começar.")
+    fundo = BASE / "fundo_inicio.png"
+    if fundo.is_file():
+        fundo64 = base64.b64encode(fundo.read_bytes()).decode("ascii")
+        st.markdown(
+            '<div class="home-art" style="background-image:linear-gradient(0deg,rgba(0,8,17,.18),rgba(0,8,17,.18)),url(data:image/png;base64,'
+            + fundo64 + ')"></div>', unsafe_allow_html=True
+        )
+    st.markdown("""<div class="home-intro"><div class="home-kicker">ELLENCO · TECNOLOGIA DA INFORMAÇÃO</div>
+    <h2>Central de Atendimento - T.I.</h2>
+    <p>Abra, consulte e acompanhe seus chamados de forma simples e rápida.</p></div>""", unsafe_allow_html=True)
+    a, b, c, d = st.columns(4)
+    cards = [
+        (a, "➕ Abrir chamado", "Solicite um novo atendimento para a equipe de T.I.", "blue"),
+        (b, "🔎 Consultar chamado", "Acompanhe o atendimento e acesse a TOTVS.", "teal"),
+        (c, "📊 Painel administrativo", "Gerencie os chamados, técnicos e indicadores.", "blue"),
+        (d, "📚 Base de conhecimento", "Consulte soluções e orientações sobre sistemas.", "slate"),
+    ]
+    for coluna, titulo_card, descricao_card, cor in cards:
+        with coluna:
+            st.markdown(f'<div class="home-card {cor}"><h3>{titulo_card}</h3><p>{descricao_card}</p></div>', unsafe_allow_html=True)
+    st.caption("Utilize o menu acima para acessar cada funcionalidade.")
 
 elif pagina == "➕ Abrir chamado":
     st.subheader("Novo chamado de suporte")
