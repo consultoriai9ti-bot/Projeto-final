@@ -145,6 +145,42 @@ CSS += """<style>
  .st-key-menu_principal [role="radiogroup"] > label{padding:8px 10px!important}
 }
 </style>"""
+CSS += """<style>
+/* Tema único em todas as páginas */
+html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
+ background: radial-gradient(ellipse at 0% 35%,#07394b 0%,transparent 34%),
+ radial-gradient(ellipse at 100% 10%,#06233c 0%,transparent 32%),#02070c!important;
+ color:#f2f8ff!important;
+}
+.block-container {max-width:1600px!important;padding-top:0.8rem!important}
+[data-testid="stHeader"] {background:#02070c!important}
+[data-testid="stMarkdownContainer"] p, .stApp h1,.stApp h2,.stApp h3,
+.stApp label,.stApp span,.stApp .stCaption {color:#f2f8ff}
+.stApp [data-testid="stWidgetLabel"] p {color:#e7f1fa!important}
+.top-brand {display:flex;align-items:center;gap:13px;min-height:66px;padding:5px 0}
+.top-brand .hero-logo {width:110px;max-height:55px;object-fit:contain}
+.top-brand .hero-logo-placeholder {color:#fff;font-weight:900;font-size:1.45rem}
+.top-brand-title {border-left:1px solid #52718a;padding-left:13px;color:#fff;font-size:clamp(.82rem,1.4vw,1.28rem);font-weight:750;white-space:nowrap}
+/* Radio nativo invisível; somente os botões permanecem */
+.st-key-menu_principal [role="radiogroup"] {background:transparent!important;border:0!important;padding:0!important;margin:0!important;gap:6px!important;justify-content:flex-end!important}
+.st-key-menu_principal [role="radiogroup"] label {position:relative!important;background:#040a11!important;border:1px solid #1479b6!important;border-radius:10px!important;padding:10px 9px!important;min-height:40px!important}
+.st-key-menu_principal [role="radiogroup"] label:has(input:checked) {background:#06364b!important;border-color:#00dce7!important;box-shadow:0 0 10px #00dce744!important}
+.st-key-menu_principal [role="radiogroup"] label p {color:#fff!important;font-weight:700!important;font-size:clamp(.66rem,.9vw,.83rem)!important}
+.st-key-menu_principal [role="radiogroup"] label [data-testid="stMarkdownContainer"] p {color:#fff!important}
+.st-key-menu_principal [role="radiogroup"] label [data-testid="stRadioButtonIcon"],
+.st-key-menu_principal [role="radiogroup"] label input[type="radio"],
+.st-key-menu_principal [role="radiogroup"] label > div:first-child:not([data-testid="stMarkdownContainer"]) {display:none!important}
+.home-intro h2 {color:#fff!important}
+.home-intro p {color:#b9cbdb!important}
+.home-kicker {color:#00dce7!important}
+.small-card,[data-testid="stMetric"] {background:#07131f!important;border:1px solid #17678e!important;color:#fff!important}
+.small-card p,[data-testid="stMetric"] * {color:#e5f3ff!important}
+.rodape {border-top-color:#294356!important}
+.rodape-titulo,.rodape-contatos,.rodape-final {color:#d5e6f5!important}
+[data-testid="stForm"], [data-testid="stVerticalBlockBorderWrapper"] {background:#07131f;border-color:#294356!important}
+[data-testid="stDataFrame"] {color:#111!important}
+@media(max-width:1100px){.top-brand{flex-wrap:wrap}.top-brand-title{white-space:normal}.st-key-menu_principal [role="radiogroup"]{justify-content:flex-start!important}}
+</style>"""
 st.markdown(CSS, unsafe_allow_html=True)
 
 AREAS = {
@@ -389,7 +425,7 @@ def anexos_do_chamado(protocolo):
 
 inicializar()
 
-# Cabeçalho: logo DENTRO da tarja preta.
+# Cabeçalho e navegação na MESMA faixa horizontal.
 logo = next((BASE / nome for nome in ["logo.png", "logo.jpg", "logo.JPG", "logo.jpeg"]
              if (BASE / nome).is_file()), None)
 if logo:
@@ -400,26 +436,18 @@ else:
     logo_html = '<div class="hero-logo-placeholder">ELLENCO</div>'
 
 cabecalho = (
-    '<div class="hero">'
-    + logo_html
-    + '<div class="hero-copy">'
-    + '<div class="kicker">ELLENCO · TECNOLOGIA DA INFORMAÇÃO</div>'
-    + '<h1>Central de Ajuda - Suporte T.I.</h1>'
-    + '<p>Autoatendimento, abertura e acompanhamento de chamados técnicos</p>'
-    + '</div></div>'
+    '<div class="top-brand">' + logo_html +
+    '<div class="top-brand-title">Central de Atendimento - T.I.</div></div>'
 )
-st.markdown(cabecalho, unsafe_allow_html=True)
-
-# Menu de navegação em botões, com atualização imediata da página.
-pagina = st.radio(
-    "Navegação",
-    ["🏠 Início", "➕ Abrir chamado", "🔎 Consultar chamado", "📚 Soluções rápidas", "🔐 Administração"],
-    horizontal=True,
-    label_visibility="collapsed",
-    key="menu_principal",
-)
-
-st.divider()
+col_marca, col_menu = st.columns([1.15, 2.85], gap="small", vertical_alignment="center")
+with col_marca:
+    st.markdown(cabecalho, unsafe_allow_html=True)
+with col_menu:
+    pagina = st.radio(
+        "Navegação",
+        ["🏠 Início", "➕ Abrir chamado", "🔎 Consultar chamado", "📚 Soluções rápidas", "🔐 Administração"],
+        horizontal=True, label_visibility="collapsed", key="menu_principal",
+    )
 
 if pagina == "🏠 Início":
     fundo = BASE / "fundo_inicio.png"
