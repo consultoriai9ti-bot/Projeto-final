@@ -8,10 +8,11 @@ import re
 import sqlite3
 import uuid
 import unicodedata
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import streamlit as st
+import pandas as pd
 
 st.set_page_config(
     page_title="Central de Ajuda | Ellenco",
@@ -26,6 +27,41 @@ ANEXOS = BASE / "anexos"
 ANEXOS.mkdir(exist_ok=True)
 TIPOS = ["png", "jpg", "jpeg", "pdf", "txt", "docx", "xlsx"]
 LIMITE_BYTES = 5 * 1024 * 1024
+# SLA em horas corridas, contado a partir da abertura. Ajuste conforme a política da T.I.
+SLA_HORAS = {"Baixo": 72, "Médio": 48, "Alto": 24, "Crítico": 8}
+STATUS_FINAL = {"Resolvido", "Cancelado"}
+FORMATO_DATA = "%d/%m/%Y %H:%M"
+
+
+def interpretar_data(valor):
+    if not valor:
+        return None
+    try:
+        return datetime.strptime(valor, FORMATO_DATA)
+    except (ValueError, TypeError):
+        return None
+
+
+def prazo_sla(chamado):
+    abertura = interpretar_data(chamado["criado_em"])
+    if abertura is None:
+        return None
+    prioridade = chamado["prioridade"].split(" — ")[0].strip()
+    return abertura + timedelta(hours=SLA_HORAS.get(prioridade, 48))
+
+
+def situacao_sla(chamado, agora=None):
+    prazo = prazo_sla(chamado)
+    if prazo is None:
+        return "Sem data", None
+    agora = agora or datetime.now()
+    encerramento = interpretar_data(chamado["finalizado_em"]) if "finalizado_em" in chamado.keys() else None
+    if chamado["status"] in STATUS_FINAL:
+        if encerramento is None:
+            return "Finalizado (sem histórico de SLA)", prazo
+        return ("Cumprido" if encerramento <= prazo else "Finalizado em atraso"), prazo
+    return ("Atrasado" if agora > prazo else "No prazo"), prazo
+
 
 CSS = """
 <style>
@@ -121,6 +157,12 @@ def inicializar():
                 status TEXT NOT NULL DEFAULT 'Aberto'
             )
         """)
+        # Migração segura de bases antigas: não apaga chamados existentes.
+        colunas = {col[1] for col in conn.execute("PRAGMA table_info(chamados)")}
+        if "finalizado_em" not in colunas:
+            conn.execute("ALTER TABLE chamados ADD COLUMN finalizado_em TEXT")
+        if "responsavel" not in colunas:
+            conn.execute("ALTER TABLE chamados ADD COLUMN responsavel TEXT")
         conn.execute("""
             CREATE TABLE IF NOT EXISTS anexos_chamado (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -270,7 +312,15 @@ def atualizar_status(protocolo, status):
     if status not in STATUS_OPCOES:
         raise ValueError("Status inválido")
     with conectar() as conn:
-        conn.execute("UPDATE chamados SET status=? WHERE protocolo=?", (status, protocolo))
+        registro = conn.execute("SELECT status, finalizado_em FROM chamados WHERE protocolo=?", (protocolo,)).fetchone()
+        if registro is None:
+            raise ValueError("Chamado não encontrado")
+        status_anterior, finalizado_anterior = registro
+        if status in STATUS_FINAL:
+            finalizado_em = finalizado_anterior if status_anterior in STATUS_FINAL and finalizado_anterior else datetime.now().strftime(FORMATO_DATA)
+        else:
+            finalizado_em = None
+        conn.execute("UPDATE chamados SET status=?, finalizado_em=? WHERE protocolo=?", (status, finalizado_em, protocolo))
 
 
 def anexos_do_chamado(protocolo):
@@ -497,14 +547,55 @@ elif pagina == "🔐 Administração":
                 st.session_state.admin_autenticado = False
                 st.rerun()
             todos = listar_chamados()
-            abertos = sum(c["status"] == "Aberto" for c in todos)
-            andamento = sum(c["status"] == "Em andamento" for c in todos)
-            resolvidos = sum(c["status"] == "Resolvido" for c in todos)
-            c1, c2, c3, c4 = st.columns(4)
-            c1.metric("Total", len(todos))
-            c2.metric("Abertos", abertos)
-            c3.metric("Em andamento", andamento)
-            c4.metric("Resolvidos", resolvidos)
+            agora = datetime.now()
+            mes_atual = (agora.year, agora.month)
+            pendentes = [c for c in todos if c["status"] not in STATUS_FINAL]
+            abertos_mes = sum(
+                1 for c in todos
+                if (d := interpretar_data(c["criado_em"])) is not None
+                and (d.year, d.month) == mes_atual
+            )
+            finalizados_mes = sum(
+                1 for c in todos
+                if c["status"] in STATUS_FINAL
+                and (d := interpretar_data(c["finalizado_em"])) is not None
+                and (d.year, d.month) == mes_atual
+            )
+            no_prazo = sum(situacao_sla(c, agora)[0] == "No prazo" for c in pendentes)
+            atrasados = sum(situacao_sla(c, agora)[0] == "Atrasado" for c in pendentes)
+
+            st.markdown("### 📊 Indicadores de atendimento")
+            a, b, c, d = st.columns(4)
+            a.metric("Chamados pendentes", len(pendentes))
+            b.metric("Abertos no mês", abertos_mes)
+            c.metric("Finalizados no mês", finalizados_mes)
+            d.metric("SLA vencido (pendentes)", atrasados)
+            e, f, g = st.columns(3)
+            e.metric("Pendentes dentro do SLA", no_prazo)
+            f.metric("SLA em dia", f"{(no_prazo / len(pendentes) * 100):.1f}%" if pendentes else "—")
+            g.metric("Total histórico", len(todos))
+            st.caption("SLA contado em horas corridas desde a abertura: Crítico 8h · Alto 24h · Médio 48h · Baixo 72h. "+
+                       "Finalizados no mês usa a data de encerramento registrada a partir desta versão; chamados encerrados anteriormente não possuem essa data.")
+
+            st.markdown("### 📋 Painel de chamados pendentes e SLA")
+            linhas = []
+            for c in pendentes:
+                situacao, prazo = situacao_sla(c, agora)
+                linhas.append({
+                    "Número": c["protocolo"], "Abertura": c["criado_em"],
+                    "Solicitante": c["nome"], "Assunto": c["titulo"],
+                    "Prioridade": c["prioridade"], "Status": c["status"],
+                    "Responsável": c["responsavel"] or "Não atribuído",
+                    "Prazo SLA": prazo.strftime(FORMATO_DATA) if prazo else "—",
+                    "SLA": situacao,
+                })
+            if linhas:
+                linhas.sort(key=lambda x: (x["SLA"] != "Atrasado", datetime.strptime(x["Prazo SLA"], FORMATO_DATA) if x["Prazo SLA"] != "—" else datetime.max))
+                st.dataframe(pd.DataFrame(linhas), use_container_width=True, hide_index=True)
+            else:
+                st.success("Não há chamados pendentes.")
+
+            st.markdown("### 🔎 Consultar e atualizar chamados")
             c1, c2 = st.columns([1, 2])
             with c1:
                 filtro_status = st.selectbox("Filtrar por status", ["Aberto", "Todos"] + [s for s in STATUS_OPCOES if s != "Aberto"])
@@ -520,6 +611,9 @@ elif pagina == "🔐 Administração":
                     st.write(f"**Área:** {chamado['area']} / {chamado['servico']} / {chamado['categoria']}")
                     st.write(f"**Prioridade:** {chamado['prioridade']}")
                     st.write(f"**Descrição:** {chamado['descricao']}")
+                    sla_atual, prazo_atual = situacao_sla(chamado)
+                    st.write(f"**SLA:** {sla_atual} | **Prazo:** {prazo_atual.strftime(FORMATO_DATA) if prazo_atual else '—'}")
+                    responsavel = st.text_input("Técnico responsável", value=chamado["responsavel"] or "", key=f"resp_{chamado['protocolo']}")
                     novo_status = st.selectbox(
                         "Situação do chamado", STATUS_OPCOES,
                         index=STATUS_OPCOES.index(chamado["status"]) if chamado["status"] in STATUS_OPCOES else 0,
@@ -527,7 +621,9 @@ elif pagina == "🔐 Administração":
                     )
                     if st.button("Salvar situação", key=f"salvar_{chamado['protocolo']}"):
                         atualizar_status(chamado["protocolo"], novo_status)
-                        st.success("Situação atualizada.")
+                        with conectar() as conn:
+                            conn.execute("UPDATE chamados SET responsavel=? WHERE protocolo=?", (responsavel.strip(), chamado["protocolo"]))
+                        st.success("Chamado atualizado.")
                         st.rerun()
                     for anexo in anexos_do_chamado(chamado["protocolo"]):
                         arquivo = ANEXOS / chamado["protocolo"] / anexo["nome_salvo"]
