@@ -64,35 +64,29 @@ def situacao_sla(chamado, agora=None):
 
 
 CSS = """<style>
-html,body,.stApp,[data-testid="stAppViewContainer"],[data-testid="stMain"]{background:radial-gradient(ellipse at 0% 40%,#073b4c 0%,transparent 38%),radial-gradient(ellipse at 100% 20%,#06253b 0%,transparent 34%),#02070c!important;color:#f2f8ff!important}
-[data-testid="stHeader"]{background:#02070c!important}
-.block-container{max-width:1600px!important;padding-top:2.5rem!important;padding-bottom:2rem!important}
-.stApp h1,.stApp h2,.stApp h3,.stApp p,.stApp label,.stApp span{color:#f2f8ff}
-[data-testid="stWidgetLabel"] p{color:#e7f1fa!important}
-.top-brand{display:flex;align-items:center;gap:10px;min-height:56px;flex-wrap:wrap;background:#030b12;padding:8px 10px;border-radius:12px}
-.top-brand .hero-logo{width:105px;max-height:52px;object-fit:contain}
-.top-brand .hero-logo-placeholder{color:#fff;font-weight:900;font-size:1.4rem}
-.top-brand-title{border-left:1px solid #52718a;padding-left:14px;color:#fff;font-size:clamp(.78rem,1vw,1.1rem);font-weight:750}
-.st-key-menu_principal [role="radiogroup"]{display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:flex-end!important;gap:7px!important;background:transparent!important;border:0!important}
-.st-key-menu_principal [role="radiogroup"] label{display:inline-flex!important;position:relative!important;align-items:center!important;justify-content:center!important;background:#040a11!important;border:1px solid #1479b6!important;border-radius:10px!important;padding:9px 8px!important;cursor:pointer!important;min-height:42px!important}
-.st-key-menu_principal [role="radiogroup"] label:hover{border-color:#00dce7!important;background:#0a2434!important}
-.st-key-menu_principal [role="radiogroup"] label:has(input:checked){background:#06364b!important;border-color:#00dce7!important;box-shadow:0 0 10px #00dce744!important}
-.st-key-menu_principal [role="radiogroup"] label p,.st-key-menu_principal [role="radiogroup"] label [data-testid="stMarkdownContainer"] p{color:#fff!important;font-weight:700!important;font-size:clamp(.7rem,.75vw,.85rem)!important;margin:0!important;white-space:nowrap!important}
-.st-key-menu_principal [role="radiogroup"] label [data-testid="stRadioButtonIcon"],.st-key-menu_principal [role="radiogroup"] label input[type="radio"],.st-key-menu_principal [role="radiogroup"] label > div:first-child:has(input){position:absolute!important;opacity:0!important;width:0!important;height:0!important;overflow:hidden!important;pointer-events:none!important}
-.home-art{width:100%;aspect-ratio:680 / 288;height:auto!important;background-size:100% 100%;background-position:center;background-repeat:no-repeat;background-color:#02060b;border:1px solid #17283b;border-radius:16px;overflow:hidden}
-.home-intro{text-align:center;margin:18px 0 22px}.home-intro h2{font-size:2rem;color:#fff!important;margin:5px 0}.home-intro p{color:#b9cbdb!important;margin:0}.home-kicker{color:#00dce7!important;font-size:.75rem;letter-spacing:2.5px;font-weight:750}
-.home-card{background:#07111e;border:1px solid #067bd7;color:white;border-radius:13px;padding:22px 16px;min-height:160px;margin-bottom:12px}.home-card.teal{border-color:#00c8b6}.home-card.slate{border-color:#8092a8}.home-card h3{font-size:1.05rem;color:#fff;margin:0 0 12px}.home-card p{font-size:.86rem;color:#c2cddd;margin:0}
-.small-card,[data-testid="stMetric"]{background:#07131f!important;border:1px solid #17678e!important;color:#fff!important;border-radius:12px;padding:14px}.small-card p,[data-testid="stMetric"] *{color:#e5f3ff!important}
-[data-testid="stForm"],[data-testid="stVerticalBlockBorderWrapper"]{background:#07131f;border-color:#294356!important;border-radius:12px}
-.rodape{border-top:1px solid #294356;margin-top:26px;padding:14px 8px 4px;text-align:center}.rodape-titulo,.rodape-contatos,.rodape-final{color:#d5e6f5!important}.rodape-titulo{font-size:13px;font-weight:700}.rodape-contatos{font-size:12px;line-height:1.8}.rodape-final{font-size:11px}
-@media(max-width:1100px){.top-brand{flex-wrap:wrap}.st-key-menu_principal [role="radiogroup"]{justify-content:flex-start!important}}
-@media(max-width:640px){.home-intro h2{font-size:1.45rem}}
-/* Oculta somente o indicador circular nativo, mantendo o texto e o clique. */
-.st-key-menu_principal [role="radiogroup"] label [data-testid="stRadioButtonIcon"],
-.st-key-menu_principal [role="radiogroup"] label > div:first-child:not([data-testid="stMarkdownContainer"]){display:none!important}
-.st-key-menu_principal [role="radiogroup"]{width:100%!important;justify-content:flex-end!important}
-.st-key-menu_principal [role="radiogroup"] label{flex-shrink:0!important}
-@media(max-width:1250px){.st-key-menu_principal [role="radiogroup"]{justify-content:flex-start!important}}
+html,body,.stApp,[data-testid="stAppViewContainer"],[data-testid="stMain"]{background:#f5f7fa!important;color:#243247!important}
+[data-testid="stHeader"]{background:#f5f7fa!important}
+.block-container{max-width:1360px!important;width:100%!important;padding:1.2rem clamp(12px,3vw,38px) 2rem!important}
+[data-testid="stMainBlockContainer"]{overflow-x:clip}
+.stApp h1,.stApp h2,.stApp h3,.stApp p,.stApp label{color:#243247}
+[data-testid="stWidgetLabel"] p{color:#344054!important}
+.top-brand{display:flex;align-items:center;gap:clamp(10px,1.4vw,20px);min-height:68px;background:#fff;padding:12px 20px;border:1px solid #e1e7ef;border-radius:14px;width:100%;box-sizing:border-box;box-shadow:0 2px 12px #1e293b08}
+.top-brand .hero-logo{width:clamp(90px,10vw,140px);max-height:50px;object-fit:contain}
+.top-brand .hero-logo-placeholder{color:#1466a3;font-weight:900;font-size:1.3rem}
+.top-brand-title{border-left:1px solid #d6e0eb;padding-left:14px;color:#152a41;font-size:clamp(1rem,1.45vw,1.35rem);font-weight:750;line-height:1.3}
+.st-key-menu_inicio button,.st-key-menu_abrir button,.st-key-menu_consultar button,.st-key-menu_solucoes button,.st-key-menu_admin button{background:#fff!important;border:1px solid #cbd8e6!important;border-radius:10px!important;color:#1f4467!important;min-height:44px!important;padding:7px 8px!important;width:100%!important;white-space:normal!important}
+.st-key-menu_inicio button p,.st-key-menu_abrir button p,.st-key-menu_consultar button p,.st-key-menu_solucoes button p,.st-key-menu_admin button p{color:#1f4467!important;font-weight:700!important;font-size:clamp(.73rem,.92vw,.92rem)!important;line-height:1.25!important}
+.st-key-menu_inicio button:hover,.st-key-menu_abrir button:hover,.st-key-menu_consultar button:hover,.st-key-menu_solucoes button:hover,.st-key-menu_admin button:hover{border-color:#1683c6!important;background:#eaf5fc!important}
+.home-hero{background:linear-gradient(110deg,#fff 0%,#f0f6fb 68%,#e7f5f6 100%);border:1px solid #e1e9f1;border-radius:18px;padding:clamp(24px,4vw,52px);margin-top:12px;box-shadow:0 5px 24px #19324b09}
+.home-hero .eyebrow{font-size:.76rem;font-weight:800;letter-spacing:2px;color:#1489a6!important}
+.home-hero h1{font-size:clamp(1.7rem,3vw,2.8rem);line-height:1.15;margin:12px 0;color:#19334c!important}
+.home-hero p{font-size:clamp(.95rem,1.3vw,1.12rem);color:#586b7f!important;max-width:650px}
+.home-intro{text-align:center;margin:18px 0 18px}.home-intro h2{font-size:clamp(1.25rem,2vw,1.75rem);color:#243247!important;margin:4px 0}.home-intro p{color:#65768b!important;margin:0}.home-kicker{color:#168ca4!important;font-size:.75rem;letter-spacing:2px;font-weight:750}
+.home-card{background:#fff;border:1px solid #b9d9ed;color:#243247;border-radius:13px;padding:clamp(13px,1.5vw,22px);min-height:145px;margin-bottom:12px;box-shadow:0 3px 12px #142c4408}.home-card.teal{border-color:#a4ddd8}.home-card.slate{border-color:#d6dde5}.home-card h3{font-size:clamp(.9rem,1.1vw,1.05rem);color:#243247;margin:0 0 12px}.home-card p{font-size:.86rem;color:#65768b;margin:0}
+.small-card,[data-testid="stMetric"]{background:#fff!important;border:1px solid #dbe4ee!important;color:#243247!important;border-radius:12px;padding:14px}.small-card p,[data-testid="stMetric"] *{color:#243247!important}
+[data-testid="stForm"],[data-testid="stVerticalBlockBorderWrapper"]{background:#fff;border-color:#dbe4ee!important;border-radius:12px}
+.rodape{border-top:1px solid #d9e3ec;margin-top:24px;padding:14px 8px 4px;text-align:center}.rodape-titulo,.rodape-contatos,.rodape-final{color:#64748b!important}.rodape-titulo{font-size:13px;font-weight:700}.rodape-contatos{font-size:12px;line-height:1.8}.rodape-final{font-size:11px}
+@media(max-width:760px){.top-brand{flex-wrap:wrap}.top-brand-title{font-size:1rem}.block-container{padding-left:12px!important;padding-right:12px!important}}
 </style>"""
 st.markdown(CSS, unsafe_allow_html=True)
 
@@ -352,28 +346,36 @@ cabecalho = (
     '<div class="top-brand">' + logo_html +
     '<div class="top-brand-title">Central de Atendimento - T.I.</div></div>'
 )
-col_marca, col_menu = st.columns([1.35, 3.65], gap="small", vertical_alignment="center")
-with col_marca:
-    st.markdown(cabecalho, unsafe_allow_html=True)
-with col_menu:
-    pagina = st.radio(
-        "Navegação",
-        ["🏠 Início", "➕ Abrir chamado", "🔎 Consultar chamado", "📚 Soluções rápidas", "🔐 Administração"],
-        horizontal=True, label_visibility="collapsed", key="menu_principal",
-    )
+# Cabeçalho em largura total: não comprime logo e título na coluna do menu.
+st.markdown(cabecalho, unsafe_allow_html=True)
+
+# Botões verdadeiros, com navegação preservada entre as atualizações do Streamlit.
+PAGINAS = ["🏠 Início", "➕ Abrir chamado", "🔎 Consultar chamado", "📚 Soluções rápidas", "🔐 Administração"]
+if "pagina_atual" not in st.session_state:
+    st.session_state.pagina_atual = PAGINAS[0]
+nomes_botoes = ["menu_inicio", "menu_abrir", "menu_consultar", "menu_solucoes", "menu_admin"]
+colunas_menu = st.columns(5, gap="small")
+for i, coluna in enumerate(colunas_menu):
+    with coluna:
+        if st.button(PAGINAS[i], key=nomes_botoes[i], use_container_width=True,
+                     type="primary" if st.session_state.pagina_atual == PAGINAS[i] else "secondary"):
+            st.session_state.pagina_atual = PAGINAS[i]
+            st.rerun()
+pagina = st.session_state.pagina_atual
 
 if pagina == "🏠 Início":
-    fundo = BASE / "fundo_inicio.png"
-    if fundo.is_file():
-        fundo64 = base64.b64encode(fundo.read_bytes()).decode("ascii")
-        st.markdown(
-            '<div class="home-art" style="background-image:url(data:image/png;base64,'
-            + fundo64 + ')"></div>', unsafe_allow_html=True
-        )
-    st.markdown("""<div class="home-intro"><div class="home-kicker">ELLENCO · TECNOLOGIA DA INFORMAÇÃO</div>
-    <h2>Central de Atendimento - T.I.</h2>
-    <p>Abra, consulte e acompanhe seus chamados de forma simples e rápida.</p></div>""", unsafe_allow_html=True)
-    a, b, c, d = st.columns(4)
+    st.markdown(
+        '<section class="home-hero">'
+        '<div class="eyebrow">ELLENCO · TECNOLOGIA DA INFORMAÇÃO</div>'
+        '<h1>Central de Atendimento - T.I.</h1>'
+        '<p>Abra, consulte e acompanhe seus chamados em um só lugar. '
+        'Atendimento de Sistemas e Infraestrutura com praticidade e organização.</p>'
+        '</section>', unsafe_allow_html=True
+    )
+    st.markdown('<div class="home-intro"><h2>Como podemos ajudar?</h2>'
+                '<p>Selecione uma das opções do menu para começar.</p></div>',
+                unsafe_allow_html=True)
+    a, b, c, d = st.columns(4, gap="small")
     cards = [
         (a, "➕ Abrir chamado", "Solicite um novo atendimento para a equipe de T.I.", "blue"),
         (b, "🔎 Consultar chamado", "Acompanhe o atendimento e acesse a TOTVS.", "teal"),
