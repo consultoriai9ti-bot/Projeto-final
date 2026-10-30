@@ -422,9 +422,6 @@ if pagina == "🏠 Início":
         'Atendimento de Sistemas e Infraestrutura com praticidade e organização.</p>'
         '</section>', unsafe_allow_html=True
     )
-    st.markdown('<div class="home-intro"><h2>Como podemos ajudar?</h2>'
-                '<p>Selecione uma das opções do menu para começar.</p></div>',
-                unsafe_allow_html=True)
     a, b, c, d = st.columns(4, gap="small")
     cards = [
         (a, "➕ Abrir chamado", "Solicite um novo atendimento para a equipe de T.I.", "blue"),
