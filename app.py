@@ -293,12 +293,20 @@ def credenciais_admin():
     return str(usuario or os.getenv("ADMIN_USER", "")), str(senha or os.getenv("ADMIN_PASSWORD", ""))
 
 
-def listar_chamados(status="Todos", busca=""):
+TECNICOS = ["Vanessa Lopes", "Renato Horta"]
+
+
+def listar_chamados(status="Todos", busca="", tecnico="Todos"):
     sql = "SELECT * FROM chamados WHERE 1=1"
     parametros = []
     if status != "Todos":
         sql += " AND status = ?"
         parametros.append(status)
+    if tecnico == "Não atribuído":
+        sql += " AND (responsavel IS NULL OR trim(responsavel) = '')"
+    elif tecnico != "Todos":
+        sql += " AND responsavel = ?"
+        parametros.append(tecnico)
     if busca:
         sql += " AND (upper(protocolo) LIKE ? OR lower(nome) LIKE ? OR lower(titulo) LIKE ?)"
         parametros.extend([f"%{busca.upper()}%", f"%{busca.lower()}%", f"%{busca.lower()}%"])
@@ -546,7 +554,9 @@ elif pagina == "🔐 Administração":
             if st.button("Sair da administração"):
                 st.session_state.admin_autenticado = False
                 st.rerun()
-            todos = listar_chamados()
+            st.markdown("### 👥 Filtrar painel por técnico")
+            filtro_tecnico = st.selectbox("Técnico responsável", ["Todos", *TECNICOS, "Não atribuído"], key="filtro_tecnico_painel")
+            todos = listar_chamados(tecnico=filtro_tecnico)
             agora = datetime.now()
             mes_atual = (agora.year, agora.month)
             pendentes = [c for c in todos if c["status"] not in STATUS_FINAL]
@@ -601,7 +611,7 @@ elif pagina == "🔐 Administração":
                 filtro_status = st.selectbox("Filtrar por status", ["Aberto", "Todos"] + [s for s in STATUS_OPCOES if s != "Aberto"])
             with c2:
                 pesquisa = st.text_input("Pesquisar número, solicitante ou assunto")
-            registros = listar_chamados(filtro_status, pesquisa.strip())
+            registros = listar_chamados(filtro_status, pesquisa.strip(), filtro_tecnico)
             st.caption(f"{len(registros)} chamado(s) encontrado(s)")
             for chamado in registros:
                 with st.expander(f"{chamado['protocolo']} · {chamado['titulo']} · {chamado['status']}"):
@@ -613,7 +623,11 @@ elif pagina == "🔐 Administração":
                     st.write(f"**Descrição:** {chamado['descricao']}")
                     sla_atual, prazo_atual = situacao_sla(chamado)
                     st.write(f"**SLA:** {sla_atual} | **Prazo:** {prazo_atual.strftime(FORMATO_DATA) if prazo_atual else '—'}")
-                    responsavel = st.text_input("Técnico responsável", value=chamado["responsavel"] or "", key=f"resp_{chamado['protocolo']}")
+                    responsavel_atual = chamado["responsavel"] or "Não atribuído"
+                    opcoes_responsavel = ["Não atribuído", *TECNICOS]
+                    if responsavel_atual not in opcoes_responsavel:
+                        opcoes_responsavel.append(responsavel_atual)
+                    responsavel = st.selectbox("Técnico responsável", opcoes_responsavel, index=opcoes_responsavel.index(responsavel_atual), key=f"resp_{chamado['protocolo']}")
                     novo_status = st.selectbox(
                         "Situação do chamado", STATUS_OPCOES,
                         index=STATUS_OPCOES.index(chamado["status"]) if chamado["status"] in STATUS_OPCOES else 0,
@@ -622,7 +636,7 @@ elif pagina == "🔐 Administração":
                     if st.button("Salvar situação", key=f"salvar_{chamado['protocolo']}"):
                         atualizar_status(chamado["protocolo"], novo_status)
                         with conectar() as conn:
-                            conn.execute("UPDATE chamados SET responsavel=? WHERE protocolo=?", (responsavel.strip(), chamado["protocolo"]))
+                            conn.execute("UPDATE chamados SET responsavel=? WHERE protocolo=?", (None if responsavel == "Não atribuído" else responsavel, chamado["protocolo"]))
                         st.success("Chamado atualizado.")
                         st.rerun()
                     for anexo in anexos_do_chamado(chamado["protocolo"]):
