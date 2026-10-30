@@ -110,6 +110,41 @@ CSS += """<style>
 .home-card p {font-size:.86rem;color:#c2cddd;margin:0}
 @media(max-width:640px){.home-art{height:230px}.home-intro h2{font-size:1.45rem}}
 </style>"""
+# Estilo exclusivo do menu principal: botões escuros com destaque azul/ciano.
+CSS += """<style>
+.st-key-menu_principal [role="radiogroup"] {
+    display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+    background:#03070c;border:1px solid #22374a;border-radius:14px;
+    padding:12px 14px;margin:0 0 6px;
+}
+.st-key-menu_principal [role="radiogroup"] > label {
+    display:inline-flex!important;align-items:center;justify-content:center;
+    background:#070d16!important;border:1px solid #49647d!important;
+    border-radius:11px!important;padding:10px 15px!important;
+    min-height:45px;cursor:pointer;transition:all .15s ease;
+}
+.st-key-menu_principal [role="radiogroup"] > label:hover {
+    border-color:#00d8df!important;background:#0a1c2b!important;
+}
+.st-key-menu_principal [role="radiogroup"] > label:has(input:checked) {
+    border-color:#00d8df!important;background:#063044!important;
+    box-shadow:0 0 0 1px #00cfe6,0 0 14px #00d8df44;
+}
+.st-key-menu_principal [role="radiogroup"] > label [data-testid="stMarkdownContainer"] p,
+.st-key-menu_principal [role="radiogroup"] > label p {
+    color:#f3f8ff!important;font-weight:650!important;font-size:0.92rem!important;
+    margin:0!important;white-space:nowrap;
+}
+.st-key-menu_principal [role="radiogroup"] > label > div:first-child:has(input) {
+    position:absolute!important;opacity:0!important;width:0!important;height:0!important;
+    overflow:hidden!important;pointer-events:none!important;
+}
+.st-key-menu_principal [role="radiogroup"] > label:has(input:checked) p {color:#56f6ff!important}
+@media(max-width:700px){
+ .st-key-menu_principal [role="radiogroup"]{gap:7px;padding:9px}
+ .st-key-menu_principal [role="radiogroup"] > label{padding:8px 10px!important}
+}
+</style>"""
 st.markdown(CSS, unsafe_allow_html=True)
 
 AREAS = {
@@ -375,12 +410,15 @@ cabecalho = (
 )
 st.markdown(cabecalho, unsafe_allow_html=True)
 
+# Menu de navegação em botões, com atualização imediata da página.
 pagina = st.radio(
     "Navegação",
     ["🏠 Início", "➕ Abrir chamado", "🔎 Consultar chamado", "📚 Soluções rápidas", "🔐 Administração"],
     horizontal=True,
     label_visibility="collapsed",
+    key="menu_principal",
 )
+
 st.divider()
 
 if pagina == "🏠 Início":
