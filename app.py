@@ -469,53 +469,87 @@ elif pagina == "➕ Abrir chamado":
                 st.error(f"Não foi possível registrar o chamado: {exc}")
 
 elif pagina == "🔎 Consultar chamado":
-    st.subheader("Acompanhar atendimento")
-    with st.form("consulta"):
-        protocolo = st.text_input(
-            "Número do chamado", placeholder="TI-20261023-ABC123"
-        ).strip().upper()
-        email_consulta = st.text_input("E-mail usado na abertura").strip().lower()
-        buscar = st.form_submit_button("Consultar", type="primary")
-    if buscar:
-        if not protocolo or not email_consulta:
-            st.warning("Informe o número do chamado e o e-mail utilizado na abertura.")
-        else:
-            registro, anexos = buscar_chamado(protocolo, email_consulta)
-            if registro is None:
-                st.warning("Chamado não encontrado para este número de chamado e e-mail.")
+    st.subheader("🔎 Acompanhamento de chamados")
+    st.caption("Consulte seus atendimentos internos ou acesse o suporte oficial TOTVS.")
+
+    aba_ellenco, aba_totvs = st.tabs(["🖥️ Chamados Ellenco", "🔗 Chamados TOTVS"])
+
+    with aba_ellenco:
+        st.markdown("#### Consultar atendimento interno")
+        st.write("Informe os dados utilizados na abertura para acompanhar o andamento do chamado.")
+        with st.container(border=True):
+            with st.form("consulta"):
+                col_num, col_email = st.columns(2)
+                with col_num:
+                    protocolo = st.text_input("Número do chamado", placeholder="TI-20261023-ABC123").strip().upper()
+                with col_email:
+                    email_consulta = st.text_input("E-mail usado na abertura", placeholder="usuario@empresa.com.br").strip().lower()
+                buscar = st.form_submit_button("🔍 Consultar chamado", type="primary", use_container_width=True)
+
+        if buscar:
+            if not protocolo or not email_consulta:
+                st.warning("Informe o número do chamado e o e-mail utilizado na abertura.")
             else:
-                st.success(f"Chamado nº {registro['protocolo']} · {registro['status']}")
-                st.markdown(f"**Assunto:** {html.escape(registro['titulo'])}")
-                campos = {
-                    "Criado em": "criado_em",
-                    "Solicitante": "nome",
-                    "Setor": "setor",
-                    "Área": "area",
-                    "Serviço": "servico",
-                    "Categoria": "categoria",
-                    "Impacto": "prioridade",
-                    "Descrição": "descricao",
-                }
-                for rotulo, coluna in campos.items():
-                    st.write(f"**{rotulo}:** {registro[coluna]}")
-                if anexos:
-                    st.markdown("**📎 Arquivos anexados**")
-                    for anexo in anexos:
-                        caminho = ANEXOS / protocolo / anexo["nome_salvo"]
-                        if caminho.is_file():
-                            st.download_button(
-                                label=f"📥 {anexo['nome_original']}",
-                                data=caminho.read_bytes(),
-                                file_name=anexo["nome_original"],
-                                mime=mimetypes.guess_type(anexo["nome_original"])[0]
-                                     or "application/octet-stream",
-                                key=f"anexo_{protocolo}_{anexo['id']}",
-                            )
-                            if caminho.suffix.lower() in {".png", ".jpg", ".jpeg"}:
-                                with st.expander(f"Visualizar: {anexo['nome_original']}"):
-                                    st.image(str(caminho), use_container_width=True)
-                        else:
-                            st.warning(f"Arquivo indisponível: {anexo['nome_original']}")
+                registro, anexos = buscar_chamado(protocolo, email_consulta)
+                if registro is None:
+                    st.warning("Não encontramos um chamado com esse número e e-mail. Confira os dados informados.")
+                else:
+                    st.markdown("#### Detalhes do atendimento")
+                    with st.container(border=True):
+                        st.markdown(f"### {html.escape(registro['titulo'])}")
+                        st.caption(f"Número do chamado: {registro['protocolo']}")
+                        c1, c2, c3 = st.columns(3)
+                        c1.metric("Situação", registro["status"])
+                        c2.metric("Prioridade", registro["prioridade"].split(" — ")[0])
+                        c3.metric("Técnico responsável", registro["responsavel"] or "Não atribuído")
+                        situacao, prazo = situacao_sla(registro)
+                        st.write(f"**SLA:** {situacao}  |  **Prazo previsto:** {prazo.strftime(FORMATO_DATA) if prazo else 'Não disponível'}")
+                        st.divider()
+                        esquerda, direita = st.columns(2)
+                        with esquerda:
+                            st.write(f"**Solicitante:** {registro['nome']}")
+                            st.write(f"**Setor / Obra:** {registro['setor']}")
+                            st.write(f"**Abertura:** {registro['criado_em']}")
+                        with direita:
+                            st.write(f"**Área:** {registro['area']}")
+                            st.write(f"**Serviço:** {registro['servico']}")
+                            st.write(f"**Categoria:** {registro['categoria']}")
+                        st.markdown("**Descrição do problema**")
+                        st.write(registro["descricao"])
+                        if registro["finalizado_em"]:
+                            st.success(f"Encerrado em {registro['finalizado_em']}")
+
+                    if anexos:
+                        with st.expander(f"📎 Arquivos anexados ({len(anexos)})", expanded=False):
+                            for anexo in anexos:
+                                caminho = ANEXOS / protocolo / anexo["nome_salvo"]
+                                if caminho.is_file():
+                                    st.download_button(
+                                        label=f"📥 {anexo['nome_original']}",
+                                        data=caminho.read_bytes(),
+                                        file_name=anexo["nome_original"],
+                                        mime=mimetypes.guess_type(anexo["nome_original"])[0] or "application/octet-stream",
+                                        key=f"anexo_{protocolo}_{anexo['id']}",
+                                    )
+                                    if caminho.suffix.lower() in {".png", ".jpg", ".jpeg"}:
+                                        st.image(str(caminho), width=420)
+                                else:
+                                    st.warning(f"Arquivo indisponível: {anexo['nome_original']}")
+
+    with aba_totvs:
+        st.markdown("#### Portal de atendimento TOTVS")
+        with st.container(border=True):
+            st.write("Consulte diretamente na TOTVS os chamados relacionados ao sistema RM e demais produtos contratados.")
+            st.info("O acesso é feito no ambiente oficial da TOTVS. Utilize seu login e senha da TOTVS na página que será aberta.")
+            st.link_button(
+                "🔐 Acessar portal TOTVS — entrar com login e senha",
+                "https://totvs.fluigidentity.com/ui/login-saml",
+                type="primary",
+                use_container_width=True,
+            )
+            st.caption("Caso o portal não direcione para a área de chamados, acesse-o pelo link de atendimento fornecido pela TOTVS. Links SAML com identificador de solicitação podem expirar.")
+            st.markdown("**Como consultar:** abra o portal, autentique-se e procure a área de chamados/solicitações.")
+        st.caption("Os chamados TOTVS não são importados automaticamente para a Central de Ajuda Ellenco.")
 
 elif pagina == "📚 Soluções rápidas":
     st.subheader("Soluções rápidas")
