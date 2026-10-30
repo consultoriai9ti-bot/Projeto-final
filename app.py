@@ -13,6 +13,7 @@ from pathlib import Path
 
 import streamlit as st
 import pandas as pd
+import altair as alt
 
 st.set_page_config(
     page_title="Central de Ajuda | Ellenco",
@@ -137,6 +138,34 @@ html,body,.stApp,[data-testid="stAppViewContainer"],[data-testid="stMain"]{backg
   .home-card{min-height:115px!important}
   .home-hero{padding:24px!important}
 }
+
+
+/* Indicadores administrativos com cartões visuais responsivos */
+.admin-kpi{background:linear-gradient(130deg,#071d36,#103c5d);border:1px solid #2b7299;border-radius:16px;padding:18px 17px;min-height:132px;box-shadow:0 8px 22px #0a29441a;display:flex;flex-direction:column;justify-content:space-between}
+.admin-kpi .kpi-icon{font-size:1.35rem;line-height:1}
+.admin-kpi .kpi-value{font-size:clamp(1.65rem,2.6vw,2.3rem);font-weight:850;color:#fff;line-height:1.15;margin-top:9px}
+.admin-kpi .kpi-label{font-size:.85rem;font-weight:650;color:#d4e9f8;line-height:1.4}
+.admin-kpi.teal{background:linear-gradient(130deg,#06424d,#0c6a78);border-color:#15a8b5}
+.admin-kpi.amber{background:linear-gradient(130deg,#49321c,#765021);border-color:#c59448}
+.admin-kpi.red{background:linear-gradient(130deg,#4b2132,#772f48);border-color:#bd647a}
+.admin-panel-heading{background:linear-gradient(110deg,#071d36,#103c5d);border-radius:14px;padding:18px 22px;margin:10px 0 16px;color:white}
+.admin-panel-heading h2{color:#fff!important;margin:0;font-size:1.4rem}
+.admin-panel-heading p{color:#c6e4f2!important;margin:5px 0 0;font-size:.9rem}
+@media(max-width:760px){.admin-kpi{min-height:112px;padding:14px}}
+
+
+/* Painel administrativo — cartões coloridos */
+.admin-panel-heading{background:linear-gradient(110deg,#071c35,#07517a)!important;border-radius:16px!important;padding:22px 26px!important;margin:12px 0 16px!important}
+.admin-panel-heading h2,.admin-panel-heading p{color:#fff!important}
+.admin-kpi{border-radius:15px!important;padding:20px!important;min-height:158px!important;display:flex;flex-direction:column;justify-content:center;gap:7px;border:1px solid #ffffff36!important;box-shadow:0 8px 20px #102b4a1c!important;background:linear-gradient(125deg,#237ef3,#0756b6)!important}
+.admin-kpi.teal{background:linear-gradient(125deg,#10b981,#08784b)!important}
+.admin-kpi.amber{background:linear-gradient(125deg,#f8c52c,#e69b00)!important}
+.admin-kpi.purple{background:linear-gradient(125deg,#9555f5,#5c30c6)!important}
+.admin-kpi.red{background:linear-gradient(125deg,#fb5967,#d8324a)!important}
+.admin-kpi .kpi-icon{font-size:1.6rem!important}
+.admin-kpi .kpi-value{color:#fff!important;font-size:clamp(1.8rem,2.6vw,2.5rem)!important;font-weight:850!important;line-height:1.1!important}
+.admin-kpi .kpi-label{color:#fff!important;font-weight:700!important;font-size:clamp(.8rem,1vw,1rem)!important}
+.admin-kpi *{text-shadow:0 1px 2px #00172a22}
 
 </style>"""
 st.markdown(CSS, unsafe_allow_html=True)
@@ -655,18 +684,100 @@ elif pagina == "🔐 Administração":
             no_prazo = sum(situacao_sla(c, agora)[0] == "No prazo" for c in pendentes)
             atrasados = sum(situacao_sla(c, agora)[0] == "Atrasado" for c in pendentes)
 
-            st.markdown("### 📊 Indicadores de atendimento")
-            a, b, c, d = st.columns(4)
-            a.metric("Chamados pendentes", len(pendentes))
-            b.metric("Abertos no mês", abertos_mes)
-            c.metric("Finalizados no mês", finalizados_mes)
-            d.metric("SLA vencido (pendentes)", atrasados)
-            e, f, g = st.columns(3)
-            e.metric("Pendentes dentro do SLA", no_prazo)
-            f.metric("SLA em dia", f"{(no_prazo / len(pendentes) * 100):.1f}%" if pendentes else "—")
-            g.metric("Total histórico", len(todos))
-            st.caption("SLA contado em horas corridas desde a abertura: Crítico 8h · Alto 24h · Médio 48h · Baixo 72h. "+
-                       "Finalizados no mês usa a data de encerramento registrada a partir desta versão; chamados encerrados anteriormente não possuem essa data.")
+            st.markdown(
+                '<div class="admin-panel-heading"><h2>📊 Visão geral dos atendimentos</h2>'
+                '<p>Acompanhe os chamados, a produtividade e os prazos de atendimento.</p></div>',
+                unsafe_allow_html=True,
+            )
+
+            def cartao_indicador(rotulo, valor, icone, cor=""):
+                st.markdown(
+                    f'<div class="admin-kpi {cor}">'
+                    f'<div class="kpi-icon">{icone}</div>'
+                    f'<div class="kpi-value">{html.escape(str(valor))}</div>'
+                    f'<div class="kpi-label">{html.escape(rotulo)}</div></div>',
+                    unsafe_allow_html=True,
+                )
+
+            em_andamento = sum(c["status"] == "Em andamento" for c in todos)
+            k1, k2, k3, k4, k5 = st.columns(5, gap="small")
+            with k1:
+                cartao_indicador("Total de chamados", len(todos), "📁")
+            with k2:
+                cartao_indicador("Chamados pendentes", len(pendentes), "🕒", "teal")
+            with k3:
+                cartao_indicador("Em andamento", em_andamento, "🔄", "amber")
+            with k4:
+                cartao_indicador("Finalizados no mês", finalizados_mes, "✔️", "purple")
+            with k5:
+                cartao_indicador("SLA vencido", atrasados, "⚠️", "red")
+
+            st.caption(
+                f"Abertos no mês: {abertos_mes}  |  Pendentes no prazo: {no_prazo}  |  "
+                f"SLA dentro do prazo: {(no_prazo / len(pendentes) * 100):.1f}%"
+                if pendentes else f"Abertos no mês: {abertos_mes}  |  Não há chamados pendentes."
+            )
+            st.caption("SLA em horas corridas: Crítico 8h · Alto 24h · Médio 48h · Baixo 72h. Encerramentos antigos sem data registrada não entram em finalizados no mês.")
+
+            graf1, graf2, graf3 = st.columns(3, gap="small")
+            with graf1:
+                st.markdown("#### Chamados por situação")
+                situacoes = pd.DataFrame({
+                    "Situação": STATUS_OPCOES,
+                    "Quantidade": [sum(c["status"] == s for c in todos) for s in STATUS_OPCOES],
+                })
+                if situacoes["Quantidade"].sum():
+                    grafico = alt.Chart(situacoes).mark_arc(innerRadius=55).encode(
+                        theta=alt.Theta("Quantidade:Q"),
+                        color=alt.Color("Situação:N", scale=alt.Scale(
+                            domain=STATUS_OPCOES,
+                            range=["#2287f5", "#ffbd21", "#04a95a", "#22c5c3", "#f24b5e"]
+                        )),
+                        tooltip=["Situação", "Quantidade"],
+                    ).properties(height=240)
+                    st.altair_chart(grafico, use_container_width=True)
+                else:
+                    st.info("Sem chamados para exibir.")
+
+            with graf2:
+                st.markdown("#### Chamados por prioridade")
+                prioridades = ["Crítico", "Alto", "Médio", "Baixo"]
+                dados_prioridade = pd.DataFrame({
+                    "Prioridade": prioridades,
+                    "Quantidade": [
+                        sum(c["prioridade"].split(" — ")[0].strip() == p for c in todos)
+                        for p in prioridades
+                    ],
+                })
+                barras = alt.Chart(dados_prioridade).mark_bar(cornerRadiusTopLeft=5, cornerRadiusTopRight=5).encode(
+                    x=alt.X("Prioridade:N", sort=prioridades, axis=alt.Axis(labelAngle=0)),
+                    y=alt.Y("Quantidade:Q", title=None),
+                    color=alt.Color("Prioridade:N", scale=alt.Scale(
+                        domain=prioridades, range=["#ef4444", "#fb923c", "#318cf2", "#16a34a"]
+                    ), legend=None),
+                    tooltip=["Prioridade", "Quantidade"],
+                ).properties(height=240)
+                st.altair_chart(barras, use_container_width=True)
+
+            with graf3:
+                st.markdown("#### Chamados por técnico")
+                nomes = [*TECNICOS, "Não atribuído"]
+                dados_tecnicos = pd.DataFrame({
+                    "Técnico": nomes,
+                    "Quantidade": [
+                        sum((c["responsavel"] or "Não atribuído") == nome for c in todos)
+                        for nome in nomes
+                    ],
+                })
+                barras_tecnicos = alt.Chart(dados_tecnicos).mark_bar(cornerRadiusEnd=5).encode(
+                    y=alt.Y("Técnico:N", sort=nomes, title=None),
+                    x=alt.X("Quantidade:Q", title=None),
+                    color=alt.Color("Técnico:N", scale=alt.Scale(
+                        domain=nomes, range=["#247df2", "#22c6c3", "#94a3b8"]
+                    ), legend=None),
+                    tooltip=["Técnico", "Quantidade"],
+                ).properties(height=240)
+                st.altair_chart(barras_tecnicos, use_container_width=True)
 
             st.markdown("### 📋 Painel de chamados pendentes e SLA")
             linhas = []
