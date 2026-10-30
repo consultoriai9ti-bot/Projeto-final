@@ -96,6 +96,48 @@ html,body,.stApp,[data-testid="stAppViewContainer"],[data-testid="stMain"]{backg
 .rodape{border-top:1px solid #d9e3ec;margin-top:24px;padding:14px 8px 4px;text-align:center}.rodape-titulo,.rodape-contatos,.rodape-final{color:#64748b!important}.rodape-titulo{font-size:13px;font-weight:700}.rodape-contatos{font-size:12px;line-height:1.8}.rodape-final{font-size:11px}
 @media(max-width:760px){.top-brand{flex-wrap:wrap}.top-brand-title{font-size:1rem}.block-container{padding-left:12px!important;padding-right:12px!important}.st-key-cabecalho_ellenco{padding:14px!important}}
 @media(max-width:950px){.top-brand-title{font-size:clamp(1rem,2.4vw,1.3rem)}}
+
+/* Página inicial: composição compacta, centralizada e coerente com o topo */
+.home-hero {
+    margin-top: 14px!important;
+    margin-bottom: 8px!important;
+    padding: clamp(26px,3.5vw,44px)!important;
+    background: linear-gradient(120deg,#071b32 0%,#0a2c4c 60%,#123b59 100%)!important;
+}
+.home-hero h1 {font-size:clamp(1.6rem,3vw,2.65rem)!important}
+.home-intro {text-align:center!important;margin:16px auto 16px!important}
+.home-intro h2 {color:#0b2c4b!important;font-size:clamp(1.2rem,2vw,1.6rem)!important;margin:0 0 4px!important}
+.home-intro p {color:#53677e!important;font-size:.92rem!important}
+.home-card {
+    background:linear-gradient(140deg,#08213b,#103654)!important;
+    border:1px solid #28749a!important;
+    border-radius:14px!important;
+    padding:clamp(16px,1.6vw,24px)!important;
+    min-height:132px!important;
+    margin-bottom:4px!important;
+    box-shadow:0 6px 18px #0a29441a!important;
+    text-align:center!important;
+}
+.home-card.teal {border-color:#1cbac2!important}
+.home-card.slate {border-color:#4e8aa8!important}
+.home-card h3 {color:#fff!important;font-size:clamp(.93rem,1.2vw,1.08rem)!important;margin:0 0 9px!important}
+.home-card p {color:#d4e7f3!important;font-size:clamp(.79rem,1vw,.9rem)!important;line-height:1.5!important}
+.rodape {
+    background:linear-gradient(120deg,#071b32,#103654)!important;
+    border:1px solid #255575!important;
+    border-radius:14px!important;
+    margin-top:18px!important;
+    padding:16px 12px!important;
+    text-align:center!important;
+}
+.rodape-titulo,.rodape-contatos,.rodape-final {color:#e0edf8!important}
+.rodape-contatos {font-size:clamp(.73rem,1vw,.86rem)!important}
+.rodape-final {opacity:.8!important}
+@media(max-width:800px){
+  .home-card{min-height:115px!important}
+  .home-hero{padding:24px!important}
+}
+
 </style>"""
 st.markdown(CSS, unsafe_allow_html=True)
 
@@ -393,7 +435,7 @@ if pagina == "🏠 Início":
     for coluna, titulo_card, descricao_card, cor in cards:
         with coluna:
             st.markdown(f'<div class="home-card {cor}"><h3>{titulo_card}</h3><p>{descricao_card}</p></div>', unsafe_allow_html=True)
-    st.caption("Utilize o menu acima para acessar cada funcionalidade.")
+
 
 elif pagina == "➕ Abrir chamado":
     st.subheader("Novo chamado de suporte")
