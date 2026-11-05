@@ -407,6 +407,40 @@ def atualizar_status(protocolo, status):
         conn.execute("UPDATE chamados SET status=?, finalizado_em=? WHERE protocolo=?", (status, finalizado_em, protocolo))
 
 
+
+def salvar_atendimento(protocolo):
+    # O callback roda antes de desenhar a página; não é necessário outro rerun.
+    st.session_state.pagina_atual = "🔐 Administração"
+    st.session_state["chamado_em_edicao"] = protocolo
+    novo_status = st.session_state[f"status_{protocolo}"]
+    responsavel = st.session_state[f"resp_{protocolo}"]
+    try:
+        if novo_status not in STATUS_OPCOES:
+            raise ValueError("Status inválido")
+        with conectar() as conn:
+            registro = conn.execute(
+                "SELECT status, finalizado_em FROM chamados WHERE protocolo=?",
+                (protocolo,),
+            ).fetchone()
+            if registro is None:
+                raise ValueError("Chamado não encontrado")
+            status_anterior, finalizado_anterior = registro
+            finalizado_em = None
+            if novo_status in STATUS_FINAL:
+                finalizado_em = (
+                    finalizado_anterior
+                    if status_anterior in STATUS_FINAL and finalizado_anterior
+                    else datetime.now().strftime(FORMATO_DATA)
+                )
+            conn.execute(
+                "UPDATE chamados SET status=?, finalizado_em=?, responsavel=? WHERE protocolo=?",
+                (novo_status, finalizado_em,
+                 None if responsavel == "Não atribuído" else responsavel, protocolo),
+            )
+        st.session_state["aviso_salvamento"] = ("sucesso", f"Chamado {protocolo} atualizado.")
+    except (sqlite3.Error, ValueError) as exc:
+        st.session_state["aviso_salvamento"] = ("erro", f"Não foi possível salvar: {exc}")
+
 def anexos_do_chamado(protocolo):
     with conectar() as conn:
         conn.row_factory = sqlite3.Row
@@ -667,6 +701,12 @@ elif pagina == "🔐 Administração":
                 else:
                     st.error("Usuário ou senha inválidos.")
         else:
+            aviso = st.session_state.pop("aviso_salvamento", None)
+            if aviso:
+                if aviso[0] == "sucesso":
+                    st.success(aviso[1])
+                else:
+                    st.error(aviso[1])
             if st.button("Sair da administração"):
                 st.session_state.admin_autenticado = False
                 st.rerun()
@@ -870,7 +910,10 @@ elif pagina == "🔐 Administração":
             if not registros:
                 st.info("Nenhum chamado corresponde aos filtros de consulta. Use 'Mostrar todos / limpar filtros'.")
             for chamado in registros:
-                with st.expander(f"{chamado['protocolo']} · {chamado['titulo']} · {chamado['status']}"):
+                with st.expander(
+                    f"{chamado['protocolo']} · {chamado['titulo']} · {chamado['status']}",
+                    expanded=st.session_state.get("chamado_em_edicao") == chamado["protocolo"],
+                ):
                     st.write(f"**Solicitante:** {chamado['nome']} — {chamado['email']}")
                     st.write(f"**Setor/Obra:** {chamado['setor']}")
                     st.write(f"**Data:** {chamado['criado_em']}")
@@ -889,12 +932,12 @@ elif pagina == "🔐 Administração":
                         index=STATUS_OPCOES.index(chamado["status"]) if chamado["status"] in STATUS_OPCOES else 0,
                         key=f"status_{chamado['protocolo']}"
                     )
-                    if st.button("Salvar situação", key=f"salvar_{chamado['protocolo']}"):
-                        atualizar_status(chamado["protocolo"], novo_status)
-                        with conectar() as conn:
-                            conn.execute("UPDATE chamados SET responsavel=? WHERE protocolo=?", (None if responsavel == "Não atribuído" else responsavel, chamado["protocolo"]))
-                        st.success("Chamado atualizado.")
-                        st.rerun()
+                    st.button(
+                        "Salvar situação",
+                        key=f"salvar_{chamado['protocolo']}",
+                        on_click=salvar_atendimento,
+                        args=(chamado["protocolo"],),
+                    )
                     for anexo in anexos_do_chamado(chamado["protocolo"]):
                         arquivo = ANEXOS / chamado["protocolo"] / anexo["nome_salvo"]
                         if arquivo.is_file():
