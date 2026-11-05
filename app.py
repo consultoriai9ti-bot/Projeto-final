@@ -243,6 +243,20 @@ def inicializar():
             )
         """)
 
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS interacoes_chamado (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                protocolo TEXT NOT NULL,
+                criado_em TEXT NOT NULL,
+                autor TEXT NOT NULL,
+                tipo TEXT NOT NULL,
+                mensagem TEXT NOT NULL,
+                FOREIGN KEY(protocolo) REFERENCES chamados(protocolo)
+            )
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_interacoes_protocolo "
+                     "ON interacoes_chamado(protocolo, id)")
+
 
 def criar_chamado(dados, arquivos):
     protocolo = f"TI-{datetime.now():%Y%m%d}-{uuid.uuid4().hex[:6].upper()}"
@@ -441,6 +455,77 @@ def salvar_atendimento(protocolo):
     except (sqlite3.Error, ValueError) as exc:
         st.session_state["aviso_salvamento"] = ("erro", f"Não foi possível salvar: {exc}")
 
+
+TIPOS_INTERACAO = ["Explicação / acompanhamento", "Ação realizada", "Solução aplicada"]
+
+
+def listar_interacoes(protocolo):
+    with conectar() as conn:
+        conn.row_factory = sqlite3.Row
+        return conn.execute(
+            "SELECT * FROM interacoes_chamado WHERE protocolo=? ORDER BY id",
+            (protocolo,),
+        ).fetchall()
+
+
+def registrar_interacao(protocolo, autor, tipo, mensagem):
+    mensagem = mensagem.strip()
+    if autor not in TECNICOS:
+        raise ValueError("Selecione o técnico que está registrando a interação.")
+    if tipo not in TIPOS_INTERACAO:
+        raise ValueError("Tipo de registro inválido.")
+    if not mensagem:
+        raise ValueError("Preencha a explicação ou descreva o que foi realizado.")
+    if len(mensagem) > 10000:
+        raise ValueError("O texto deve ter no máximo 10.000 caracteres.")
+    with conectar() as conn:
+        if conn.execute("SELECT 1 FROM chamados WHERE protocolo=?", (protocolo,)).fetchone() is None:
+            raise ValueError("Chamado não encontrado.")
+        conn.execute(
+            "INSERT INTO interacoes_chamado "
+            "(protocolo, criado_em, autor, tipo, mensagem) VALUES (?,?,?,?,?)",
+            (protocolo, datetime.now().strftime("%d/%m/%Y %H:%M:%S"), autor, tipo, mensagem),
+        )
+
+
+def salvar_interacao(protocolo):
+    st.session_state.pagina_atual = "🔐 Administração"
+    st.session_state["chamado_em_edicao"] = protocolo
+    chave_aviso = f"aviso_interacao_{protocolo}"
+    if not st.session_state.get("admin_autenticado", False):
+        st.session_state[chave_aviso] = ("erro", "Entre na Administração para registrar interações.")
+        return
+    try:
+        registrar_interacao(
+            protocolo,
+            st.session_state[f"autor_interacao_{protocolo}"],
+            st.session_state[f"tipo_interacao_{protocolo}"],
+            st.session_state[f"texto_interacao_{protocolo}"],
+        )
+        # Limpa apenas depois de confirmar a gravação.
+        st.session_state[f"texto_interacao_{protocolo}"] = ""
+        st.session_state[chave_aviso] = ("sucesso", "Interação registrada no histórico do chamado.")
+    except (sqlite3.Error, ValueError) as exc:
+        st.session_state[chave_aviso] = ("erro", f"Não foi possível registrar: {exc}")
+
+
+def mostrar_historico(protocolo):
+    interacoes = listar_interacoes(protocolo)
+    if not interacoes:
+        st.info("Ainda não há interações registradas para este chamado.")
+    if interacoes:
+        st.caption(f"{len(interacoes)} assentamento(s) registrado(s) neste chamado.")
+    for numero, item in enumerate(interacoes, start=1):
+        with st.container(border=True):
+            identificacao, conteudo = st.columns([1, 3])
+            with identificacao:
+                st.markdown(f"**Assentamento {numero} de {len(interacoes)}**")
+                st.caption(f"Por {item['autor']}")
+                st.caption(item["criado_em"])
+            with conteudo:
+                st.markdown(f"**{item['tipo']}**")
+                st.text(item["mensagem"])
+
 def anexos_do_chamado(protocolo):
     with conectar() as conn:
         conn.row_factory = sqlite3.Row
@@ -636,6 +721,9 @@ elif pagina == "🔎 Consultar chamado":
                         st.write(registro["descricao"])
                         if registro["finalizado_em"]:
                             st.success(f"Encerrado em {registro['finalizado_em']}")
+
+                    with st.expander("💬 Interações e solução", expanded=True):
+                        mostrar_historico(registro["protocolo"])
 
                     if anexos:
                         with st.expander(f"📎 Arquivos anexados ({len(anexos)})", expanded=False):
@@ -914,41 +1002,81 @@ elif pagina == "🔐 Administração":
                     f"{chamado['protocolo']} · {chamado['titulo']} · {chamado['status']}",
                     expanded=st.session_state.get("chamado_em_edicao") == chamado["protocolo"],
                 ):
-                    st.write(f"**Solicitante:** {chamado['nome']} — {chamado['email']}")
-                    st.write(f"**Setor/Obra:** {chamado['setor']}")
-                    st.write(f"**Data:** {chamado['criado_em']}")
-                    st.write(f"**Área:** {chamado['area']} / {chamado['servico']} / {chamado['categoria']}")
-                    st.write(f"**Prioridade:** {chamado['prioridade']}")
-                    st.write(f"**Descrição:** {chamado['descricao']}")
-                    sla_atual, prazo_atual = situacao_sla(chamado)
-                    st.write(f"**SLA:** {sla_atual} | **Prazo:** {prazo_atual.strftime(FORMATO_DATA) if prazo_atual else '—'}")
-                    responsavel_atual = chamado["responsavel"] or "Não atribuído"
-                    opcoes_responsavel = ["Não atribuído", *TECNICOS]
-                    if responsavel_atual not in opcoes_responsavel:
-                        opcoes_responsavel.append(responsavel_atual)
-                    responsavel = st.selectbox("Técnico responsável", opcoes_responsavel, index=opcoes_responsavel.index(responsavel_atual), key=f"resp_{chamado['protocolo']}")
-                    novo_status = st.selectbox(
-                        "Situação do chamado", STATUS_OPCOES,
-                        index=STATUS_OPCOES.index(chamado["status"]) if chamado["status"] in STATUS_OPCOES else 0,
-                        key=f"status_{chamado['protocolo']}"
-                    )
-                    st.button(
-                        "Salvar situação",
-                        key=f"salvar_{chamado['protocolo']}",
-                        on_click=salvar_atendimento,
-                        args=(chamado["protocolo"],),
-                    )
-                    for anexo in anexos_do_chamado(chamado["protocolo"]):
-                        arquivo = ANEXOS / chamado["protocolo"] / anexo["nome_salvo"]
-                        if arquivo.is_file():
-                            st.download_button(
-                                f"📎 {anexo['nome_original']}", arquivo.read_bytes(),
-                                file_name=anexo["nome_original"],
-                                mime=mimetypes.guess_type(anexo["nome_original"])[0] or "application/octet-stream",
-                                key=f"admin_anexo_{anexo['id']}"
+                    aba_interacoes, aba_detalhes = st.tabs([
+                        "💬 Interações e solução", "📋 Detalhes e situação"
+                    ])
+                    with aba_interacoes:
+                        st.markdown("#### Assentamentos — histórico do atendimento")
+                        mostrar_historico(chamado["protocolo"])
+                        aviso_interacao = st.session_state.pop(
+                            f"aviso_interacao_{chamado['protocolo']}", None
+                        )
+                        if aviso_interacao:
+                            if aviso_interacao[0] == "sucesso":
+                                st.success(aviso_interacao[1])
+                            else:
+                                st.error(aviso_interacao[1])
+                        st.markdown("#### Registrar explicação ou correção")
+                        st.caption("Estes registros ficam visíveis ao solicitante na consulta do chamado. "
+                                   "Registrar uma solução não altera a situação automaticamente.")
+                        with st.form(f"form_interacao_{chamado['protocolo']}"):
+                            autor_padrao = chamado["responsavel"]
+                            st.selectbox(
+                                "Registrado por", TECNICOS,
+                                index=TECNICOS.index(autor_padrao) if autor_padrao in TECNICOS else 0,
+                                key=f"autor_interacao_{chamado['protocolo']}",
                             )
-                        else:
-                            st.caption(f"Anexo indisponível: {anexo['nome_original']}")
+                            st.selectbox(
+                                "Tipo de registro", TIPOS_INTERACAO,
+                                key=f"tipo_interacao_{chamado['protocolo']}",
+                            )
+                            st.text_area(
+                                "Explicação / o que foi realizado para a correção",
+                                height=160, max_chars=10000,
+                                placeholder="Descreva a análise, os procedimentos realizados e o resultado dos testes.",
+                                key=f"texto_interacao_{chamado['protocolo']}",
+                            )
+                            st.form_submit_button(
+                                "Salvar interação", type="primary",
+                                on_click=salvar_interacao,
+                                args=(chamado["protocolo"],),
+                            )
+                    with aba_detalhes:
+                        st.write(f"**Solicitante:** {chamado['nome']} — {chamado['email']}")
+                        st.write(f"**Setor/Obra:** {chamado['setor']}")
+                        st.write(f"**Data:** {chamado['criado_em']}")
+                        st.write(f"**Área:** {chamado['area']} / {chamado['servico']} / {chamado['categoria']}")
+                        st.write(f"**Prioridade:** {chamado['prioridade']}")
+                        st.write(f"**Descrição:** {chamado['descricao']}")
+                        sla_atual, prazo_atual = situacao_sla(chamado)
+                        st.write(f"**SLA:** {sla_atual} | **Prazo:** {prazo_atual.strftime(FORMATO_DATA) if prazo_atual else '—'}")
+                        responsavel_atual = chamado["responsavel"] or "Não atribuído"
+                        opcoes_responsavel = ["Não atribuído", *TECNICOS]
+                        if responsavel_atual not in opcoes_responsavel:
+                            opcoes_responsavel.append(responsavel_atual)
+                        responsavel = st.selectbox("Técnico responsável", opcoes_responsavel, index=opcoes_responsavel.index(responsavel_atual), key=f"resp_{chamado['protocolo']}")
+                        novo_status = st.selectbox(
+                            "Situação do chamado", STATUS_OPCOES,
+                            index=STATUS_OPCOES.index(chamado["status"]) if chamado["status"] in STATUS_OPCOES else 0,
+                            key=f"status_{chamado['protocolo']}"
+                        )
+                        st.button(
+                            "Salvar situação",
+                            key=f"salvar_{chamado['protocolo']}",
+                            on_click=salvar_atendimento,
+                            args=(chamado["protocolo"],),
+                        )
+                        for anexo in anexos_do_chamado(chamado["protocolo"]):
+                            arquivo = ANEXOS / chamado["protocolo"] / anexo["nome_salvo"]
+                            if arquivo.is_file():
+                                st.download_button(
+                                    f"📎 {anexo['nome_original']}", arquivo.read_bytes(),
+                                    file_name=anexo["nome_original"],
+                                    mime=mimetypes.guess_type(anexo["nome_original"])[0] or "application/octet-stream",
+                                    key=f"admin_anexo_{anexo['id']}"
+                                )
+                            else:
+                                st.caption(f"Anexo indisponível: {anexo['nome_original']}")
 
 # Rodapé compacto e centralizado. HTML em uma única string sem indentação.
 rodape = (
