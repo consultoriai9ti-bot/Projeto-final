@@ -366,6 +366,12 @@ def credenciais_admin():
 TECNICOS = ["Vanessa Lopes", "Renato Horta"]
 
 
+def limpar_filtros_admin():
+    st.session_state["filtro_tecnico_painel"] = "Todos"
+    st.session_state["filtro_status_admin"] = "Todos"
+    st.session_state["pesquisa_admin"] = ""
+
+
 def listar_chamados(status="Todos", busca="", tecnico="Todos"):
     sql = "SELECT * FROM chamados WHERE 1=1"
     parametros = []
@@ -664,9 +670,39 @@ elif pagina == "🔐 Administração":
             if st.button("Sair da administração"):
                 st.session_state.admin_autenticado = False
                 st.rerun()
+            acoes1, acoes2 = st.columns(2)
+            with acoes1:
+                if st.button("🔄 Atualizar chamados", use_container_width=True):
+                    st.rerun()
+            with acoes2:
+                st.button("Mostrar todos / limpar filtros", on_click=limpar_filtros_admin,
+                          use_container_width=True)
             st.markdown("### 👥 Filtrar painel por técnico")
             filtro_tecnico = st.selectbox("Técnico responsável", ["Todos", *TECNICOS, "Não atribuído"], key="filtro_tecnico_painel")
-            todos = listar_chamados(tecnico=filtro_tecnico)
+            # Leitura nova a cada execução, da mesma base usada na abertura.
+            base_chamados = listar_chamados()
+            todos = [
+                c for c in base_chamados
+                if filtro_tecnico == "Todos"
+                or (c["responsavel"] or "").strip() == (
+                    "" if filtro_tecnico == "Não atribuído" else filtro_tecnico
+                )
+            ]
+            sem_tecnico = sum(not (c["responsavel"] or "").strip() for c in base_chamados)
+            st.caption(f"Total cadastrado: {len(base_chamados)} | Exibindo: {len(todos)} | Sem técnico: {sem_tecnico}")
+            if filtro_tecnico != "Todos":
+                st.info("Filtro de técnico ativo nos gráficos e nas listas. Chamados novos ficam em "
+                        "'Não atribuído' até receberem um responsável. Use 'Mostrar todos / limpar filtros' "
+                        "para consultar a fila completa.")
+            if not base_chamados:
+                st.warning("Não há chamados no banco utilizado por esta execução do sistema.")
+                with st.expander("Diagnóstico do banco de dados"):
+                    st.code(str(DB))
+                    st.write("A abertura e a administração devem usar a mesma aplicação e o mesmo "
+                             "arquivo chamados.db. Ao trocar o código, mantenha esse arquivo e a "
+                             "pasta anexos no diretório original.")
+            elif not todos:
+                st.warning("Há chamados cadastrados, mas nenhum corresponde ao técnico selecionado.")
             agora = datetime.now()
             mes_atual = (agora.year, agora.month)
             pendentes = [c for c in todos if c["status"] not in STATUS_FINAL]
@@ -795,16 +831,44 @@ elif pagina == "🔐 Administração":
                 linhas.sort(key=lambda x: (x["SLA"] != "Atrasado", datetime.strptime(x["Prazo SLA"], FORMATO_DATA) if x["Prazo SLA"] != "—" else datetime.max))
                 st.dataframe(pd.DataFrame(linhas), use_container_width=True, hide_index=True)
             else:
-                st.success("Não há chamados pendentes.")
+                st.info("Não há chamados pendentes para o filtro selecionado.")
+
+            st.markdown("### 📂 Chamados por situação")
+            grupos = [
+                ("Todos", todos),
+                ("Abertos", [c for c in todos if c["status"] == "Aberto"]),
+                ("Em andamento", [c for c in todos if c["status"] == "Em andamento"]),
+                ("Aguardando usuário", [c for c in todos if c["status"] == "Aguardando usuário"]),
+                ("Finalizados", [c for c in todos if c["status"] in STATUS_FINAL]),
+            ]
+            abas = st.tabs([f"{nome} ({len(itens)})" for nome, itens in grupos])
+            for aba, (nome_grupo, itens) in zip(abas, grupos):
+                with aba:
+                    if not itens:
+                        st.info("Nenhum chamado nesta situação para o filtro selecionado.")
+                    else:
+                        st.dataframe(pd.DataFrame([{
+                            "Número": c["protocolo"],
+                            "Abertura": c["criado_em"],
+                            "Solicitante": c["nome"],
+                            "Assunto": c["titulo"],
+                            "Status": c["status"],
+                            "Responsável": (c["responsavel"] or "").strip() or "Não atribuído",
+                            "Prioridade": c["prioridade"],
+                            "SLA": situacao_sla(c, agora)[0],
+                        } for c in itens]), use_container_width=True, hide_index=True)
+            st.caption("Para atribuir um técnico ou alterar a situação, abra os detalhes abaixo.")
 
             st.markdown("### 🔎 Consultar e atualizar chamados")
             c1, c2 = st.columns([1, 2])
             with c1:
-                filtro_status = st.selectbox("Filtrar por status", ["Aberto", "Todos"] + [s for s in STATUS_OPCOES if s != "Aberto"])
+                filtro_status = st.selectbox("Filtrar por status", ["Todos", *STATUS_OPCOES], key="filtro_status_admin")
             with c2:
-                pesquisa = st.text_input("Pesquisar número, solicitante ou assunto")
+                pesquisa = st.text_input("Pesquisar número, solicitante ou assunto", key="pesquisa_admin")
             registros = listar_chamados(filtro_status, pesquisa.strip(), filtro_tecnico)
             st.caption(f"{len(registros)} chamado(s) encontrado(s)")
+            if not registros:
+                st.info("Nenhum chamado corresponde aos filtros de consulta. Use 'Mostrar todos / limpar filtros'.")
             for chamado in registros:
                 with st.expander(f"{chamado['protocolo']} · {chamado['titulo']} · {chamado['status']}"):
                     st.write(f"**Solicitante:** {chamado['nome']} — {chamado['email']}")
